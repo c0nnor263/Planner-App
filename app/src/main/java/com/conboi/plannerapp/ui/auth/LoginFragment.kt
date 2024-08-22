@@ -13,12 +13,11 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
+import com.conboi.core.data.showErrorToast
 import com.conboi.plannerapp.R
 import com.conboi.plannerapp.adapter.LoginViewPagerAdapter
 import com.conboi.plannerapp.databinding.FragmentLoginBinding
-import com.conboi.plannerapp.ui.IntroActivity
 import com.conboi.plannerapp.ui.MainActivity
-import com.conboi.plannerapp.utils.showErrorToast
 import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.FullScreenContentCallback
 import com.google.android.gms.ads.LoadAdError
@@ -29,7 +28,6 @@ import com.google.firebase.auth.FirebaseUser
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import kotlin.math.abs
-
 
 @AndroidEntryPoint
 class LoginFragment : Fragment() {
@@ -49,14 +47,18 @@ class LoginFragment : Fragment() {
     }
 
     override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
-        savedInstanceState: Bundle?
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?,
     ): View {
         _binding = FragmentLoginBinding.inflate(layoutInflater)
         return binding.root
     }
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+    override fun onViewCreated(
+        view: View,
+        savedInstanceState: Bundle?,
+    ) {
         super.onViewCreated(view, savedInstanceState)
         binding.lifecycleOwner = this
         initAd()
@@ -103,14 +105,15 @@ class LoginFragment : Fragment() {
                     super.onAdLoaded(interstitialAd)
                     mInterstitialAd = interstitialAd
                 }
-            }
+            },
         )
 
-        mInterstitialAd?.fullScreenContentCallback = object : FullScreenContentCallback() {
-            override fun onAdShowedFullScreenContent() {
-                mInterstitialAd = null
+        mInterstitialAd?.fullScreenContentCallback =
+            object : FullScreenContentCallback() {
+                override fun onAdShowedFullScreenContent() {
+                    mInterstitialAd = null
+                }
             }
-        }
     }
 
     private fun initViewPager() {
@@ -128,11 +131,12 @@ class LoginFragment : Fragment() {
                         val verticalMargin = pageHeight * (1 - scaleFactor) / 2
                         val horizontalMargin = pageWidth * (1 - scaleFactor) / 2
 
-                        translationY = if (position < 0) {
-                            horizontalMargin - verticalMargin / 2
-                        } else {
-                            horizontalMargin + verticalMargin / 2
-                        }
+                        translationY =
+                            if (position < 0) {
+                                horizontalMargin - verticalMargin / 2
+                            } else {
+                                horizontalMargin + verticalMargin / 2
+                            }
                     }
                 }
             }
@@ -163,15 +167,15 @@ class LoginFragment : Fragment() {
                 context,
                 resources.getString(
                     R.string.successfully_sign_in,
-                    user?.displayName
+                    user?.displayName,
                 ),
-                Toast.LENGTH_SHORT
+                Toast.LENGTH_SHORT,
             ).show()
-
 
             val isFirstLaunch = viewModel.isFirstLaunch()
             if (isFirstLaunch) {
-                val intent = Intent(requireContext(), IntroActivity::class.java)
+                val intent =
+                    Intent(requireContext(), com.conboi.features.intro.IntroActivity::class.java)
                 startActivity(intent)
             }
 

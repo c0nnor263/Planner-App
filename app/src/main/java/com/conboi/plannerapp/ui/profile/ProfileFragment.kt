@@ -21,18 +21,17 @@ import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
+import com.conboi.core.data.BaseTabFragment
+import com.conboi.core.data.getColorPrimaryTheme
+import com.conboi.core.data.hideAdView
+import com.conboi.core.data.showAdView
+import com.conboi.core.data.showErrorToast
+import com.conboi.core.domain.PROFILE_TAG
 import com.conboi.plannerapp.R
 import com.conboi.plannerapp.databinding.FragmentProfileBinding
 import com.conboi.plannerapp.interfaces.dialog.EditProfileDialogCallback
-import com.conboi.plannerapp.ui.IntroActivity
 import com.conboi.plannerapp.ui.MainActivity
-import com.conboi.plannerapp.utils.BaseTabFragment
-import com.conboi.plannerapp.utils.PROFILE_TAG
-import com.conboi.plannerapp.utils.getColorPrimaryTheme
-import com.conboi.plannerapp.utils.hideAdView
 import com.conboi.plannerapp.utils.shared.LoadingDialogFragment
-import com.conboi.plannerapp.utils.showAdView
-import com.conboi.plannerapp.utils.showErrorToast
 import com.google.android.gms.ads.AdView
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -58,8 +57,9 @@ class ProfileFragment : BaseTabFragment(), EditProfileDialogCallback {
     private var adView: AdView? = null
 
     override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
-        savedInstanceState: Bundle?
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?,
     ): View {
         _binding =
             DataBindingUtil.inflate(inflater, R.layout.fragment_profile, container, false)
@@ -76,21 +76,24 @@ class ProfileFragment : BaseTabFragment(), EditProfileDialogCallback {
         return binding.root
     }
 
-
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+    override fun onViewCreated(
+        view: View,
+        savedInstanceState: Bundle?,
+    ) {
         super.onViewCreated(view, savedInstanceState)
         binding.lifecycleOwner = this
         binding.bindUser = viewModel.user
         binding.viewModel = viewModel
 
-        enterTransition = MaterialFadeThrough().apply {
-            duration = resources.getInteger(R.integer.reply_motion_duration_large).toLong()
-        }
-        exitTransition = MaterialFadeThrough().apply {
-            duration = resources.getInteger(R.integer.reply_motion_duration_large).toLong()
-        }
+        enterTransition =
+            MaterialFadeThrough().apply {
+                duration = resources.getInteger(R.integer.reply_motion_duration_large).toLong()
+            }
+        exitTransition =
+            MaterialFadeThrough().apply {
+                duration = resources.getInteger(R.integer.reply_motion_duration_large).toLong()
+            }
         view.background.alpha = 80
-
 
         binding.mBtnSignOut.setOnClickListener {
             showSignOutDialog()
@@ -106,13 +109,13 @@ class ProfileFragment : BaseTabFragment(), EditProfileDialogCallback {
                     Toast.makeText(
                         requireContext(),
                         resources.getString(R.string.you_sent_email_confirm),
-                        Toast.LENGTH_SHORT
+                        Toast.LENGTH_SHORT,
                     ).show()
                 } else {
                     Toast.makeText(
                         requireContext(),
                         resources.getString(R.string.error_send_email_confirm),
-                        Toast.LENGTH_SHORT
+                        Toast.LENGTH_SHORT,
                     ).show()
                     showErrorToast(requireContext(), error)
                 }
@@ -120,7 +123,8 @@ class ProfileFragment : BaseTabFragment(), EditProfileDialogCallback {
         }
 
         binding.mBtnTutorial.setOnClickListener {
-            val intent = Intent(requireContext(), IntroActivity::class.java)
+            val intent =
+                Intent(requireContext(), com.conboi.features.intro.IntroActivity::class.java)
             startActivity(intent)
         }
         binding.tvPrivacyPolicy.movementMethod = LinkMovementMethod.getInstance()
@@ -137,7 +141,6 @@ class ProfileFragment : BaseTabFragment(), EditProfileDialogCallback {
             binding.tvConfirmEmail.setTextColor(Color.RED)
             binding.tvConfirmEmail.visibility = View.VISIBLE
         }
-
 
         viewModel.premiumState.observe(viewLifecycleOwner) {
             if (it) {
@@ -157,8 +160,8 @@ class ProfileFragment : BaseTabFragment(), EditProfileDialogCallback {
                 binding.mBtnSignOut,
                 colorTintList(
                     requireContext(),
-                    colorTheme
-                )
+                    colorTheme,
+                ),
             )
         }
     }
@@ -187,7 +190,6 @@ class ProfileFragment : BaseTabFragment(), EditProfileDialogCallback {
         _binding = null
     }
 
-
     override fun resetUser(user: FirebaseUser) {
         viewModel.reloadUser()
         binding.bindUser = user
@@ -199,13 +201,13 @@ class ProfileFragment : BaseTabFragment(), EditProfileDialogCallback {
                 Toast.makeText(
                     requireContext(),
                     resources.getString(R.string.check_new_email),
-                    Toast.LENGTH_SHORT
+                    Toast.LENGTH_SHORT,
                 ).show()
             } else {
                 Toast.makeText(
                     requireContext(),
                     resources.getString(R.string.error_check_new_email),
-                    Toast.LENGTH_SHORT
+                    Toast.LENGTH_SHORT,
                 ).show()
                 showErrorToast(requireContext(), verifyError)
             }
@@ -218,17 +220,17 @@ class ProfileFragment : BaseTabFragment(), EditProfileDialogCallback {
                 Toast.makeText(
                     requireContext(),
                     resources.getString(R.string.successfully_change_password),
-                    Toast.LENGTH_SHORT
+                    Toast.LENGTH_SHORT,
                 ).show()
             } else {
                 Toast.makeText(
                     requireContext(),
                     resources.getString(R.string.error_check_new_password),
-                    Toast.LENGTH_SHORT
+                    Toast.LENGTH_SHORT,
                 ).show()
                 showErrorToast(
                     requireContext(),
-                    updatePasswordError
+                    updatePasswordError,
                 )
             }
         }
@@ -240,19 +242,18 @@ class ProfileFragment : BaseTabFragment(), EditProfileDialogCallback {
                 Toast.makeText(
                     requireContext(),
                     resources.getString(R.string.password_reset_sent),
-                    Toast.LENGTH_SHORT
+                    Toast.LENGTH_SHORT,
                 ).show()
             } else {
                 Toast.makeText(
                     requireContext(),
                     resources.getString(R.string.password_reset_error),
-                    Toast.LENGTH_SHORT
+                    Toast.LENGTH_SHORT,
                 ).show()
                 showErrorToast(requireContext(), error)
             }
         }
     }
-
 
     private fun copyUserID() {
         val clipboard =
@@ -260,14 +261,14 @@ class ProfileFragment : BaseTabFragment(), EditProfileDialogCallback {
         val clip: ClipData =
             ClipData.newPlainText(
                 resources.getString(R.string.user_id),
-                binding.tvId.text
+                binding.tvId.text,
             )
         clipboard.setPrimaryClip(clip)
 
         Toast.makeText(
             context,
             resources.getString(R.string.copied_user_id),
-            Toast.LENGTH_SHORT
+            Toast.LENGTH_SHORT,
         ).show()
     }
 
@@ -279,30 +280,32 @@ class ProfileFragment : BaseTabFragment(), EditProfileDialogCallback {
                 dialog.dismiss()
             }.show()
 
-
     private fun navigateToSubscribeFragment() {
         findNavController().currentDestination?.apply {
-            exitTransition = MaterialSharedAxis(MaterialSharedAxis.X, true).apply {
-                duration = resources.getInteger(R.integer.reply_motion_duration_large).toLong()
-            }
-            reenterTransition = MaterialSharedAxis(MaterialSharedAxis.X, false).apply {
-                duration = resources.getInteger(R.integer.reply_motion_duration_large).toLong()
-            }
+            exitTransition =
+                MaterialSharedAxis(MaterialSharedAxis.X, true).apply {
+                    duration = resources.getInteger(R.integer.reply_motion_duration_large).toLong()
+                }
+            reenterTransition =
+                MaterialSharedAxis(MaterialSharedAxis.X, false).apply {
+                    duration = resources.getInteger(R.integer.reply_motion_duration_large).toLong()
+                }
         }
         findNavController().navigate(ProfileFragmentDirections.actionProfileFragmentToSubscribeFragment())
     }
 
-    private fun showSignOutDialog(): AlertDialog = MaterialAlertDialogBuilder(requireContext())
-        .setTitle(resources.getString(R.string.warning))
-        .setMessage(resources.getString(R.string.you_sign_out))
-        .setPositiveButton(resources.getString(R.string.submit)) { dialog, _ ->
-            signOut()
-            dialog.dismiss()
-        }
-        .setNegativeButton(resources.getString(R.string.cancel)) { dialog, _ ->
-            dialog.cancel()
-        }
-        .show()
+    private fun showSignOutDialog(): AlertDialog =
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle(resources.getString(R.string.warning))
+            .setMessage(resources.getString(R.string.you_sign_out))
+            .setPositiveButton(resources.getString(R.string.submit)) { dialog, _ ->
+                signOut()
+                dialog.dismiss()
+            }
+            .setNegativeButton(resources.getString(R.string.cancel)) { dialog, _ ->
+                dialog.cancel()
+            }
+            .show()
 
     private fun showEditProfile() {
         val editProfileFragment = EditProfileDialogFragment(this)
@@ -313,7 +316,8 @@ class ProfileFragment : BaseTabFragment(), EditProfileDialogCallback {
         val loadingDialog = LoadingDialogFragment()
         loadingDialog.isCancelable = false
         loadingDialog.show(
-            parentFragmentManager, LoadingDialogFragment.TAG
+            parentFragmentManager,
+            LoadingDialogFragment.TAG,
         )
 
         viewModel.sortedTasks.observe(viewLifecycleOwner) { currentList ->
@@ -348,10 +352,11 @@ class ProfileFragment : BaseTabFragment(), EditProfileDialogCallback {
             delay(100)
 
             ViewCompat.setBackgroundTintList(
-                binding.mBtnUpgrade, colorTintList(
+                binding.mBtnUpgrade,
+                colorTintList(
                     requireContext(),
-                    R.color.primaryColorTree
-                )
+                    R.color.primaryColorTree,
+                ),
             )
         }
     }
@@ -361,10 +366,11 @@ class ProfileFragment : BaseTabFragment(), EditProfileDialogCallback {
         lifecycleScope.launch {
             delay(100)
             ViewCompat.setBackgroundTintList(
-                binding.mBtnUpgrade, colorTintList(
+                binding.mBtnUpgrade,
+                colorTintList(
                     requireContext(),
-                    R.color.primaryColorFire
-                )
+                    R.color.primaryColorFire,
+                ),
             )
         }
     }

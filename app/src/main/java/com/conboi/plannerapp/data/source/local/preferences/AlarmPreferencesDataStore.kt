@@ -6,7 +6,11 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
-import com.conboi.plannerapp.utils.*
+import com.conboi.core.data.getStringTimeWithReset
+import com.conboi.core.data.getTimeFromString
+import com.conboi.core.domain.ALARM_PREFERENCES
+import com.conboi.core.domain.GLOBAL_START_DATE
+import com.conboi.core.domain.enums.AlarmType
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.catch
 import java.io.IOException
@@ -22,20 +26,26 @@ val Context.alarmPreferences by preferencesDataStore(name = ALARM_PREFERENCES)
  */
 
 @Singleton
-class AlarmPreferencesDataStore @Inject constructor(@ApplicationContext context: Context) {
+class AlarmPreferencesDataStore
+@Inject
+constructor(
+    @ApplicationContext context: Context,
+) {
     private val dataStore = context.alarmPreferences
-    val preferencesFlow = dataStore.data
-        .catch { exception ->
-            if (exception is IOException) {
-                emit(emptyPreferences())
-            } else {
-                throw exception
+    val preferencesFlow =
+        dataStore.data
+            .catch { exception ->
+                if (exception is IOException) {
+                    emit(emptyPreferences())
+                } else {
+                    throw exception
+                }
             }
-        }
 
-
-    suspend fun addReminderPref(id: Int, newReminderTime: Long) =
-        dataStore.edit { preferences ->
+    suspend fun addReminderPref(
+        id: Int,
+        newReminderTime: Long,
+    ) = dataStore.edit { preferences ->
             val alarmIsNotEmptyKey = booleanPreferencesKey(ALARM_IS_NOT_EMPTY)
 
             val alarmIdKey = stringPreferencesKey(id.toString())
@@ -45,8 +55,10 @@ class AlarmPreferencesDataStore @Inject constructor(@ApplicationContext context:
             preferences[alarmIdKey] = "$newReminderTime:$deadlineTime"
         }
 
-    suspend fun addDeadlinePref(id: Int, newDeadlineTime: Long) =
-        dataStore.edit { preferences ->
+    suspend fun addDeadlinePref(
+        id: Int,
+        newDeadlineTime: Long,
+    ) = dataStore.edit { preferences ->
             val alarmIsNotEmptyKey = booleanPreferencesKey(ALARM_IS_NOT_EMPTY)
 
             val alarmIdKey = stringPreferencesKey(id.toString())
@@ -56,7 +68,6 @@ class AlarmPreferencesDataStore @Inject constructor(@ApplicationContext context:
             preferences[alarmIsNotEmptyKey] = true
             preferences[alarmIdKey] = "$reminderTime:$newDeadlineTime"
         }
-
 
     suspend fun removeReminderPref(id: Int) =
         dataStore.edit { preferences ->
@@ -73,7 +84,6 @@ class AlarmPreferencesDataStore @Inject constructor(@ApplicationContext context:
                     getStringTimeWithReset(resetFor = AlarmType.REMINDER, deadlineTime)
             }
         }
-
 
     suspend fun removeDeadlinePref(id: Int) =
         dataStore.edit { preferences ->

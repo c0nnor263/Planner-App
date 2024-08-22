@@ -2,11 +2,14 @@ package com.conboi.plannerapp.data.source.remote.repo
 
 import android.app.AlarmManager
 import android.content.Context
-import com.conboi.plannerapp.data.model.FriendType
-import com.conboi.plannerapp.data.model.TaskType
+import com.conboi.core.data.firebaseCall
+import com.conboi.core.data.model.FriendType
+import com.conboi.core.data.model.TaskType
+import com.conboi.core.domain.FirebaseResult
+import com.conboi.core.domain.GLOBAL_START_DATE
+import com.conboi.core.domain.enums.InviteFriendError
 import com.conboi.plannerapp.utils.*
 import com.conboi.plannerapp.utils.shared.AlarmUtil
-import com.conboi.plannerapp.utils.shared.firebase.FirebaseResult
 import com.google.firebase.auth.AuthCredential
 import com.google.firebase.auth.EmailAuthProvider
 import com.google.firebase.auth.FirebaseAuth
@@ -22,11 +25,12 @@ import dagger.hilt.android.components.ActivityRetainedComponent
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 
-
 @Module
 @InstallIn(ActivityRetainedComponent::class)
-class FirebaseRepository @Inject constructor(
-    private val alarmUtil: AlarmUtil
+class FirebaseRepository
+@Inject
+constructor(
+    private val alarmUtil: AlarmUtil,
 ) {
     private var firestore: FirebaseFirestore? = Firebase.firestore
     private var auth: FirebaseAuth? = Firebase.auth
@@ -35,27 +39,28 @@ class FirebaseRepository @Inject constructor(
 
     private val userFriendIdReference: (String?) -> DocumentReference? = { id ->
         firestore?.document(
-            "Users/${user?.uid}/FriendList/${id}"
+            "Users/${user?.uid}/FriendList/$id",
         )
     }
 
     private val friendUserIdReference: (String?) -> DocumentReference? = { id ->
-        firestore?.document("Users/${id}/FriendList/${user?.uid}")
+        firestore?.document("Users/$id/FriendList/${user?.uid}")
     }
-
 
     fun createUserWithEmailAndPassword(
         displayName: String,
         email: String,
         password: String,
-        callback: (FirebaseUser?, Exception?) -> Unit
+        callback: (FirebaseUser?, Exception?) -> Unit,
     ) {
         auth?.createUserWithEmailAndPassword(email, password)
             ?.addOnCompleteListener { task ->
                 if (task.isSuccessful) {
-                    auth?.currentUser?.updateProfile(userProfileChangeRequest {
-                        setDisplayName(displayName)
-                    })?.addOnCompleteListener {
+                    auth?.currentUser?.updateProfile(
+                        userProfileChangeRequest {
+                            setDisplayName(displayName)
+                        },
+                    )?.addOnCompleteListener {
                         user = auth?.currentUser
                         callback(user, null)
                     }
@@ -65,11 +70,10 @@ class FirebaseRepository @Inject constructor(
             }
     }
 
-
     fun signInWithEmailAndPassword(
         email: String,
         password: String,
-        callback: (FirebaseUser?, Exception?) -> Unit
+        callback: (FirebaseUser?, Exception?) -> Unit,
     ) {
         auth?.signInWithEmailAndPassword(email, password)
             ?.addOnCompleteListener { task ->
@@ -82,10 +86,9 @@ class FirebaseRepository @Inject constructor(
             }
     }
 
-
     fun signInWithGoogleCredential(
         firebaseCredential: AuthCredential,
-        callback: (FirebaseUser?, Exception?) -> Unit
+        callback: (FirebaseUser?, Exception?) -> Unit,
     ) {
         auth?.signInWithCredential(firebaseCredential)
             ?.addOnCompleteListener { task ->
@@ -113,112 +116,114 @@ class FirebaseRepository @Inject constructor(
     private fun userBackupTaskReference() =
         firestore?.document("Users/${user?.uid}/TaskList/BackupTasks")
 
-
     fun getCurrentUser() = user
 
     fun getFriendQuery() = userFriendReference()!!
 
-    fun checkForNewFriends(): FirebaseResult<List<FriendType>?> = firebaseCall {
-        val callbackResult: MutableList<FriendType> = arrayListOf()
+    fun checkForNewFriends(): FirebaseResult<List<FriendType>?> =
+        firebaseCall {
+            val callbackResult: MutableList<FriendType> = arrayListOf()
 
-        userFriendReference()?.addSnapshotListener { snapshots, e ->
-            if (e != null) {
-                FirebaseResult.Error<Exception>(e)
-                return@addSnapshotListener
-            }
+            userFriendReference()?.addSnapshotListener { snapshots, e ->
+                if (e != null) {
+                    FirebaseResult.Error<Exception>(e)
+                    return@addSnapshotListener
+                }
 
-            for (documentChangeOne in snapshots?.documentChanges ?: return@addSnapshotListener) {
-                if (documentChangeOne.type == DocumentChange.Type.ADDED &&
-                    documentChangeOne.document.getLong(UserKey.KEY_USER_REQUEST)
-                        ?.toInt() == 2
-                ) {
-                    if (documentChangeOne.document.getBoolean("isShown") != true) {
-                        val id = documentChangeOne.document.getString(UserKey.KEY_USER_ID)
-                        val name = documentChangeOne.document[UserKey.KEY_USER_NAME].toString()
+                for (documentChangeOne in snapshots?.documentChanges
+                    ?: return@addSnapshotListener) {
+                    if (documentChangeOne.type == DocumentChange.Type.ADDED &&
+                        documentChangeOne.document.getLong(UserKey.KEY_USER_REQUEST)
+                            ?.toInt() == 2
+                    ) {
+                        if (documentChangeOne.document.getBoolean("isShown") != true) {
+                            val id = documentChangeOne.document.getString(UserKey.KEY_USER_ID)
+                            val name = documentChangeOne.document[UserKey.KEY_USER_NAME].toString()
 
-                        val formattedId =
-                            documentChangeOne.document[UserKey.KEY_USER_ID].toString()
-                                .filter { it.isDigit() }
-                                .toInt() + snapshots.documents.size
+                            val formattedId =
+                                documentChangeOne.document[UserKey.KEY_USER_ID].toString()
+                                    .filter { it.isDigit() }
+                                    .toInt() + snapshots.documents.size
 
-                        userFriendIdReference(id)?.set(
-                            hashMapOf("isShown" to true),
-                            SetOptions.merge()
-                        )
-
-                        callbackResult.add(
-                            FriendType(
-                                user_id = formattedId.toString(),
-                                user_name = name
+                            userFriendIdReference(id)?.set(
+                                hashMapOf("isShown" to true),
+                                SetOptions.merge(),
                             )
-                        )
-                    } else {
-                        FirebaseResult.Error<Exception>(null)
-                        return@addSnapshotListener
+
+                            callbackResult.add(
+                                FriendType(
+                                    user_id = formattedId.toString(),
+                                    user_name = name,
+                                ),
+                            )
+                        } else {
+                            FirebaseResult.Error<Exception>(null)
+                            return@addSnapshotListener
+                        }
                     }
                 }
             }
+            FirebaseResult.Success(callbackResult)
         }
-        FirebaseResult.Success(callbackResult)
-    }
 
-    suspend fun checkEveryFriendInfo(friendList: List<DocumentSnapshot>) = firebaseCall {
-        // Get Users collections
-        val usersCollection = usersReference()?.get()?.await()
+    suspend fun checkEveryFriendInfo(friendList: List<DocumentSnapshot>) =
+        firebaseCall {
+            // Get Users collections
+            val usersCollection = usersReference()?.get()?.await()
 
-        val usersList: MutableList<QueryDocumentSnapshot> =
-            ArrayList()
-        for (user in usersCollection!!) {
-            usersList.add(user)
-        }
-        //Searching a friend
-        friendList.forEach { friend ->
-            usersList.forEach { user ->
-                // Check if friend info is exists
-                if (friend.getString(UserKey.KEY_USER_ID) == user.getString(
-                        UserKey.KEY_USER_ID
-                    )
-                ) {
-                    //Get a friend info
-                    val friendMap: MutableMap<String, Any> = HashMap()
-                    friendMap.apply {
-                        set(
+            val usersList: MutableList<QueryDocumentSnapshot> =
+                ArrayList()
+            for (user in usersCollection!!) {
+                usersList.add(user)
+            }
+            // Searching a friend
+            friendList.forEach { friend ->
+                usersList.forEach { user ->
+                    // Check if friend info is exists
+                    if (friend.getString(UserKey.KEY_USER_ID) ==
+                        user.getString(
                             UserKey.KEY_USER_ID,
-                            user.getString(UserKey.KEY_USER_ID).toString()
                         )
-                        set(
-                            UserKey.KEY_USER_PHOTO_URL,
-                            user.getString(UserKey.KEY_USER_PHOTO_URL).toString()
-                        )
-                        set(
-                            UserKey.KEY_USER_NAME,
-                            user.getString(UserKey.KEY_USER_NAME).toString()
-                        )
-                        set(
-                            UserKey.KEY_USER_EMAIL,
-                            user.getString(UserKey.KEY_USER_EMAIL).toString()
-                        )
-                        set(
-                            UserKey.KEY_USER_COUNT_COMPLETED_TASKS,
-                            user.getLong(UserKey.KEY_USER_COUNT_COMPLETED_TASKS) ?: 0
-                        )
-                        set(
-                            UserKey.KEY_USER_PRIVATE_MODE,
-                            user.getBoolean(UserKey.KEY_USER_PRIVATE_MODE) ?: false
+                    ) {
+                        // Get a friend info
+                        val friendMap: MutableMap<String, Any> = HashMap()
+                        friendMap.apply {
+                            set(
+                                UserKey.KEY_USER_ID,
+                                user.getString(UserKey.KEY_USER_ID).toString(),
+                            )
+                            set(
+                                UserKey.KEY_USER_PHOTO_URL,
+                                user.getString(UserKey.KEY_USER_PHOTO_URL).toString(),
+                            )
+                            set(
+                                UserKey.KEY_USER_NAME,
+                                user.getString(UserKey.KEY_USER_NAME).toString(),
+                            )
+                            set(
+                                UserKey.KEY_USER_EMAIL,
+                                user.getString(UserKey.KEY_USER_EMAIL).toString(),
+                            )
+                            set(
+                                UserKey.KEY_USER_COUNT_COMPLETED_TASKS,
+                                user.getLong(UserKey.KEY_USER_COUNT_COMPLETED_TASKS) ?: 0,
+                            )
+                            set(
+                                UserKey.KEY_USER_PRIVATE_MODE,
+                                user.getBoolean(UserKey.KEY_USER_PRIVATE_MODE) ?: false,
+                            )
+                        }
+
+                        // Update user's friend info
+                        userFriendIdReference(friendMap[UserKey.KEY_USER_ID] as String)?.set(
+                            friendMap,
+                            SetOptions.merge(),
                         )
                     }
-
-                    // Update user's friend info
-                    userFriendIdReference(friendMap[UserKey.KEY_USER_ID] as String)?.set(
-                        friendMap,
-                        SetOptions.merge()
-                    )
                 }
             }
+            FirebaseResult.Success(null)
         }
-        FirebaseResult.Success(null)
-    }
-
 
     // User actions
     fun initUser(privateMode: Boolean) {
@@ -250,8 +255,8 @@ class FirebaseRepository @Inject constructor(
             user?.reauthenticate(
                 EmailAuthProvider.getCredential(
                     user?.email.toString(),
-                    currentPassword
-                )
+                    currentPassword,
+                ),
             )?.await()
             FirebaseResult.Success(null)
         }
@@ -262,32 +267,34 @@ class FirebaseRepository @Inject constructor(
             FirebaseResult.Success(null)
         }
 
+    suspend fun updateUser(userInfo: MutableMap<String, Any>) =
+        firebaseCall {
+            userInfoReference()?.update(userInfo)?.await()
+            FirebaseResult.Success(null)
+        }
 
-    suspend fun updateUser(userInfo: MutableMap<String, Any>) = firebaseCall {
-        userInfoReference()?.update(userInfo)?.await()
-        FirebaseResult.Success(null)
-    }
+    suspend fun updatePassword(newPassword: String): FirebaseResult<Any?> =
+        firebaseCall {
+            user?.updatePassword(newPassword)?.await()
+            FirebaseResult.Success(null)
+        }
 
-    suspend fun updatePassword(newPassword: String): FirebaseResult<Any?> = firebaseCall {
-        user?.updatePassword(newPassword)?.await()
-        FirebaseResult.Success(null)
-    }
-
-    suspend fun updateUserProfileName(newName: String): FirebaseResult<Any?> = firebaseCall {
-        user?.updateProfile(userProfileChangeRequest { displayName = newName })?.await()
-        FirebaseResult.Success(null)
-    }
+    suspend fun updateUserProfileName(newName: String): FirebaseResult<Any?> =
+        firebaseCall {
+            user?.updateProfile(userProfileChangeRequest { displayName = newName })?.await()
+            FirebaseResult.Success(null)
+        }
 
     suspend fun uploadTasks(
         currentList: List<TaskType>,
         isBackupDownloaded: Boolean,
-        withBackupUpload: Boolean
-    ) =
-        firebaseCall {
+        withBackupUpload: Boolean,
+    ) = firebaseCall {
             userTaskReference()?.set(
                 currentList.associateBy(
                     { (it.idTask + it.created).toString() },
-                    { it })
+                    { it },
+                ),
             )?.await()
             if (withBackupUpload) {
                 uploadBackupTasks(currentList, isBackupDownloaded)
@@ -298,19 +305,21 @@ class FirebaseRepository @Inject constructor(
 
     private suspend fun uploadBackupTasks(
         currentList: List<TaskType>,
-        isBackupDownloaded: Boolean
+        isBackupDownloaded: Boolean,
     ) = firebaseCall {
         val result = userInfoReference()?.get()?.await()
         val currentTime = System.currentTimeMillis()
-        val lastSync = result?.getLong(UserKey.KEY_USER_LAST_SYNC)
-            ?: GLOBAL_START_DATE
+        val lastSync =
+            result?.getLong(UserKey.KEY_USER_LAST_SYNC)
+                ?: GLOBAL_START_DATE
 
         // Check last backup sync time
         if (currentTime - lastSync >= AlarmManager.INTERVAL_DAY * 3 && !isBackupDownloaded) {
-            val processedMapTasks = currentList.associateBy(
-                { (it.idTask + it.created).toString() },
-                { it }
-            )
+            val processedMapTasks =
+                currentList.associateBy(
+                    { (it.idTask + it.created).toString() },
+                    { it },
+                )
 
             userBackupTaskReference()?.set(processedMapTasks)?.await()
             userInfoReference()?.update(UserKey.KEY_USER_LAST_SYNC, currentTime)?.await()
@@ -318,65 +327,68 @@ class FirebaseRepository @Inject constructor(
         FirebaseResult.Success<Any?>(null)
     }
 
-    suspend fun sendConfirmationEmail(): FirebaseResult<Any?> = firebaseCall {
-        val isEmailVerified = user?.isEmailVerified == false
-        if (isEmailVerified) {
-            Firebase.auth.useAppLanguage()
-            user?.sendEmailVerification()?.await()
+    suspend fun sendConfirmationEmail(): FirebaseResult<Any?> =
+        firebaseCall {
+            val isEmailVerified = user?.isEmailVerified == false
+            if (isEmailVerified) {
+                Firebase.auth.useAppLanguage()
+                user?.sendEmailVerification()?.await()
+            }
+            FirebaseResult.Success(null)
         }
-        FirebaseResult.Success(null)
-    }
 
-    suspend fun sendResetPasswordEmail(
-        email: String = user?.email.toString()
-    ): FirebaseResult<Any?> =
+    suspend fun sendResetPasswordEmail(email: String = user?.email.toString()): FirebaseResult<Any?> =
         firebaseCall {
             auth?.sendPasswordResetEmail(email)?.await()
             FirebaseResult.Success(null)
         }
 
+    suspend fun downloadLatestBackupInfo(isBackupDownloaded: Boolean) =
+        firebaseCall {
+            val resultUserInfo = userInfoReference()?.get()?.await()
+            val lastSyncTime =
+                resultUserInfo?.getLong(UserKey.KEY_USER_LAST_SYNC) ?: GLOBAL_START_DATE
 
-    suspend fun downloadLatestBackupInfo(isBackupDownloaded: Boolean) = firebaseCall {
-        val resultUserInfo = userInfoReference()?.get()?.await()
-        val lastSyncTime =
-            resultUserInfo?.getLong(UserKey.KEY_USER_LAST_SYNC) ?: GLOBAL_START_DATE
+            val backupTasks =
+                userBackupTaskReference()?.get()?.await()
 
-        val backupTasks =
-            userBackupTaskReference()?.get()?.await()
-
-        if (backupTasks?.exists() == false &&
-            backupTasks.data?.isEmpty() == true &&
-            isBackupDownloaded
-        ) {
-            return@firebaseCall FirebaseResult.Error(null)
+            if (backupTasks?.exists() == false &&
+                backupTasks.data?.isEmpty() == true &&
+                isBackupDownloaded
+            ) {
+                return@firebaseCall FirebaseResult.Error(null)
+            }
+            FirebaseResult.Success(lastSyncTime)
         }
-        FirebaseResult.Success(lastSyncTime)
-    }
 
-    suspend fun downloadPremiumType(): FirebaseResult<String> = firebaseCall {
-        val result = userInfoReference()?.get()?.await()
-        val premiumType = result?.getString(UserKey.KEY_USER_PREMIUM_TYPE)
-        FirebaseResult.Success(premiumType)
-    }
+    suspend fun downloadPremiumType(): FirebaseResult<String> =
+        firebaseCall {
+            val result = userInfoReference()?.get()?.await()
+            val premiumType = result?.getString(UserKey.KEY_USER_PREMIUM_TYPE)
+            FirebaseResult.Success(premiumType)
+        }
 
-    suspend fun downloadTotalCompleted(): FirebaseResult<Int> = firebaseCall {
-        val result = userInfoReference()?.get()?.await()
-        val totalCompleted = result?.getLong(UserKey.KEY_USER_COUNT_COMPLETED_TASKS)?.toInt()
-        FirebaseResult.Success(totalCompleted)
-    }
+    suspend fun downloadTotalCompleted(): FirebaseResult<Int> =
+        firebaseCall {
+            val result = userInfoReference()?.get()?.await()
+            val totalCompleted = result?.getLong(UserKey.KEY_USER_COUNT_COMPLETED_TASKS)?.toInt()
+            FirebaseResult.Success(totalCompleted)
+        }
 
-    suspend fun downloadUserTasks(context: Context, currentList: List<TaskType>) = firebaseCall {
+    suspend fun downloadUserTasks(
+        context: Context,
+        currentList: List<TaskType>,
+    ) = firebaseCall {
         currentList.toMutableList().sortBy { it.idTask }
 
         val tasksDocument = userBackupTaskReference()?.get()?.await()
         val mapFromTasks: MutableMap<String, Any>? = tasksDocument?.data
 
-
         val stringTaskList: MutableList<String> = ArrayList()
         val processedList: MutableList<TaskType> = ArrayList()
 
         if (mapFromTasks != null) {
-            //Get map value from key task
+            // Get map value from key task
             for ((key) in mapFromTasks) {
                 stringTaskList.add(key)
             }
@@ -384,47 +396,58 @@ class FirebaseRepository @Inject constructor(
             stringTaskList.forEach { task ->
                 val currentTime = System.currentTimeMillis() + stringTaskList.indexOf(task)
 
-                val id = tasksDocument.getLong(
-                    "$task.${TaskType.COLUMN_ID}"
-                )?.toInt()!!
+                val id =
+                    tasksDocument.getLong(
+                        "$task.${TaskType.COLUMN_ID}",
+                    )?.toInt()!!
 
-                val title = tasksDocument.getString("$task.${TaskType.COLUMN_TITLE}")
-                    ?: "Error getting title"
+                val title =
+                    tasksDocument.getString("$task.${TaskType.COLUMN_TITLE}")
+                        ?: "Error getting title"
 
-                val description = tasksDocument.getString("$task.${TaskType.COLUMN_DESCRIPTION}")
-                    ?: "Error getting description"
+                val description =
+                    tasksDocument.getString("$task.${TaskType.COLUMN_DESCRIPTION}")
+                        ?: "Error getting description"
 
-                val priority = Priority.valueOf(
-                    tasksDocument.getString("$task.${TaskType.COLUMN_PRIORITY}")
-                        ?: Priority.DEFAULT.name
-                )
+                val priority =
+                    Priority.valueOf(
+                        tasksDocument.getString("$task.${TaskType.COLUMN_PRIORITY}")
+                            ?: Priority.DEFAULT.name,
+                    )
 
-                val time = tasksDocument.getLong("$task.${TaskType.COLUMN_TIME}")
-                    ?: GLOBAL_START_DATE
+                val time =
+                    tasksDocument.getLong("$task.${TaskType.COLUMN_TIME}")
+                        ?: GLOBAL_START_DATE
 
-                val deadline = tasksDocument.getLong("$task.${TaskType.COLUMN_DEADLINE}")
-                    ?: GLOBAL_START_DATE
+                val deadline =
+                    tasksDocument.getLong("$task.${TaskType.COLUMN_DEADLINE}")
+                        ?: GLOBAL_START_DATE
 
-                val lastOvercheck = tasksDocument.getLong("$task.${TaskType.COLUMN_LAST_OVERCHECK}")
-                    ?: GLOBAL_START_DATE
+                val lastOvercheck =
+                    tasksDocument.getLong("$task.${TaskType.COLUMN_LAST_OVERCHECK}")
+                        ?: GLOBAL_START_DATE
 
-                val completed = tasksDocument.getLong("$task.${TaskType.COLUMN_COMPLETED}")
-                    ?: GLOBAL_START_DATE
+                val completed =
+                    tasksDocument.getLong("$task.${TaskType.COLUMN_COMPLETED}")
+                        ?: GLOBAL_START_DATE
 
-                val repeatMode = RepeatMode.valueOf(
-                    tasksDocument.getString("$task.${TaskType.COLUMN_REPEAT_MODE}")
-                        ?: RepeatMode.Once.name
-                )
+                val repeatMode =
+                    RepeatMode.valueOf(
+                        tasksDocument.getString("$task.${TaskType.COLUMN_REPEAT_MODE}")
+                            ?: RepeatMode.Once.name,
+                    )
 
-                val missed = tasksDocument.getBoolean("$task.${TaskType.COLUMN_MISSED}")
-                    ?: false
+                val missed =
+                    tasksDocument.getBoolean("$task.${TaskType.COLUMN_MISSED}")
+                        ?: false
 
-                val checked = tasksDocument.getBoolean("$task.${TaskType.COLUMN_CHECKED}")
-                    ?: false
+                val checked =
+                    tasksDocument.getBoolean("$task.${TaskType.COLUMN_CHECKED}")
+                        ?: false
 
-                val totalChecked = tasksDocument.getLong("$task.${TaskType.COLUMN_TOTAL_CHECKED}")
-                    ?.toInt() ?: 0
-
+                val totalChecked =
+                    tasksDocument.getLong("$task.${TaskType.COLUMN_TOTAL_CHECKED}")
+                        ?.toInt() ?: 0
 
                 val taskType =
                     TaskType(
@@ -432,17 +455,15 @@ class FirebaseRepository @Inject constructor(
                         title = title,
                         description = description,
                         priority = priority,
-
                         time = time,
                         deadline = deadline,
                         lastOvercheck = lastOvercheck,
                         created = currentTime,
                         completed = completed,
-
                         repeatMode = repeatMode,
                         missed = missed,
                         checked = checked,
-                        totalChecked = totalChecked
+                        totalChecked = totalChecked,
                     )
 
                 if (taskType.time != GLOBAL_START_DATE) {
@@ -453,7 +474,7 @@ class FirebaseRepository @Inject constructor(
                             context,
                             taskType.idTask,
                             taskType.repeatMode,
-                            taskType.time
+                            taskType.time,
                         )
                     }
                 }
@@ -465,7 +486,7 @@ class FirebaseRepository @Inject constructor(
                         alarmUtil.setDeadline(
                             context,
                             taskType.idTask,
-                            taskType.deadline
+                            taskType.deadline,
                         )
                     }
                 }
@@ -482,9 +503,10 @@ class FirebaseRepository @Inject constructor(
         currentList.forEach { cTask ->
             processedList.forEach { pTask ->
                 if (pTask.idTask == cTask.idTask) {
-                    val newPTask = pTask.copy(
-                        idTask = currentList.last().idTask + 10 + processedList.indexOf(pTask)
-                    )
+                    val newPTask =
+                        pTask.copy(
+                            idTask = currentList.last().idTask + 10 + processedList.indexOf(pTask),
+                        )
 
                     processedList.remove(pTask)
                     processedList.add(newPTask)
@@ -495,207 +517,215 @@ class FirebaseRepository @Inject constructor(
         FirebaseResult.Success(processedList)
     }
 
-
     // Friend actions
-    suspend fun acceptFriendRequest(friendId: String): FirebaseResult<Any?> = firebaseCall {
-        val map: MutableMap<String, Any> = HashMap()
-        map[UserKey.KEY_USER_REQUEST] = 1
-        friendUserIdReference(friendId)?.update(map)?.await()
-        userFriendIdReference(friendId)?.update(map)?.await()
-        FirebaseResult.Success(null)
-    }
+    suspend fun acceptFriendRequest(friendId: String): FirebaseResult<Any?> =
+        firebaseCall {
+            val map: MutableMap<String, Any> = HashMap()
+            map[UserKey.KEY_USER_REQUEST] = 1
+            friendUserIdReference(friendId)?.update(map)?.await()
+            userFriendIdReference(friendId)?.update(map)?.await()
+            FirebaseResult.Success(null)
+        }
 
     suspend fun inviteFriend(
         userPrivateState: Boolean,
         totalCompleted: Int,
         searchId: String,
-    ): FirebaseResult<Any?> = firebaseCall {
-        if (searchId != user?.uid) {
-            //Get all users in Firestore
-            val usersCollection = usersReference()?.get()?.await()
+    ): FirebaseResult<Any?> =
+        firebaseCall {
+            if (searchId != user?.uid) {
+                // Get all users in Firestore
+                val usersCollection = usersReference()?.get()?.await()
 
-            //Getting current user friend list
-            val friendList = userFriendReference()?.get()?.await()?.documents
+                // Getting current user friend list
+                val friendList = userFriendReference()?.get()?.await()?.documents
 
-            if (usersCollection == null || friendList == null) {
-                return@firebaseCall FirebaseResult.Error(
-                    Exception("There is no users")
-                )
-            }
-
-            val usersList: MutableList<QueryDocumentSnapshot> =
-                ArrayList()
-            for (document in usersCollection) {
-                usersList.add(document)
-            }
-
-            //Searching a friend
-            usersList.forEach { listUser ->
-                if (listUser.getString(UserKey.KEY_USER_ID) == searchId) {
-
-                    for (friendDocument in friendList) {
-                        if (searchId == friendDocument.getString(
-                                UserKey.KEY_USER_ID
-                            )
-                        ) {
-                            return@firebaseCall FirebaseResult.Error(
-                                Exception(
-                                    InviteFriendError.FRIEND_ALREADY.name
-                                )
-                            )
-                        }
-                    }
-
-                    //Get and set a friend info
-                    val friendMap: MutableMap<String, Any> =
-                        HashMap()
-                    friendMap.apply {
-                        set(
-                            UserKey.KEY_USER_ID,
-                            listUser.getString(UserKey.KEY_USER_ID).toString()
-                        )
-
-                        set(UserKey.KEY_USER_REQUEST, 0)
-
-                        set(
-                            UserKey.KEY_USER_PHOTO_URL,
-                            listUser.getString(UserKey.KEY_USER_PHOTO_URL).toString()
-                        )
-
-                        set(
-                            UserKey.KEY_USER_NAME,
-                            listUser.getString(UserKey.KEY_USER_NAME).toString()
-                        )
-
-                        set(
-                            UserKey.KEY_USER_EMAIL,
-                            listUser.getString(UserKey.KEY_USER_EMAIL).toString()
-                        )
-
-                        set(UserKey.KEY_USER_FRIEND_ADDING_TIME, System.currentTimeMillis())
-
-                        set(
-                            UserKey.KEY_USER_COUNT_COMPLETED_TASKS,
-                            listUser.getLong(UserKey.KEY_USER_COUNT_COMPLETED_TASKS) ?: 0
-                        )
-
-                        set(
-                            UserKey.KEY_USER_PRIVATE_MODE,
-                            listUser.getBoolean(UserKey.KEY_USER_PRIVATE_MODE) ?: false
-                        )
-                    }
-
-
-                    //Send friend request
-                    val userInfo: MutableMap<String, Any> =
-                        HashMap()
-
-                    user?.let { currentUser ->
-                        val uid = currentUser.uid
-                        val email = currentUser.email.toString()
-                        val name = currentUser.displayName.toString()
-                        val photoUrl = currentUser.photoUrl.toString()
-
-                        userInfo.apply {
-                            userInfo[UserKey.KEY_USER_ID] =
-                                uid
-                            userInfo[UserKey.KEY_USER_REQUEST] =
-                                2
-                            userInfo[UserKey.KEY_USER_PHOTO_URL] =
-                                photoUrl
-                            userInfo[UserKey.KEY_USER_NAME] =
-                                name
-                            userInfo[UserKey.KEY_USER_FRIEND_ADDING_TIME] =
-                                System.currentTimeMillis()
-                            userInfo[UserKey.KEY_USER_EMAIL] =
-                                email
-                            userInfo[UserKey.KEY_USER_COUNT_COMPLETED_TASKS] =
-                                totalCompleted
-                            userInfo[UserKey.KEY_USER_PRIVATE_MODE] =
-                                userPrivateState
-                        }
-                    }
-
-                    userFriendIdReference(friendMap[UserKey.KEY_USER_ID] as String)?.set(
-                        friendMap
-                    )?.await()
-
-                    friendUserIdReference(friendMap[UserKey.KEY_USER_ID] as String)?.set(userInfo)
-                        ?.await()
-
-                    FirebaseResult.Success(null)
-                } else {
-                    return@firebaseCall FirebaseResult.Error(Exception(InviteFriendError.NOT_EXIST.name))
+                if (usersCollection == null || friendList == null) {
+                    return@firebaseCall FirebaseResult.Error(
+                        Exception("There is no users"),
+                    )
                 }
+
+                val usersList: MutableList<QueryDocumentSnapshot> =
+                    ArrayList()
+                for (document in usersCollection) {
+                    usersList.add(document)
+                }
+
+                // Searching a friend
+                usersList.forEach { listUser ->
+                    if (listUser.getString(UserKey.KEY_USER_ID) == searchId) {
+                        for (friendDocument in friendList) {
+                            if (searchId ==
+                                friendDocument.getString(
+                                    UserKey.KEY_USER_ID,
+                                )
+                            ) {
+                                return@firebaseCall FirebaseResult.Error(
+                                    Exception(
+                                        InviteFriendError.FRIEND_ALREADY.name,
+                                    ),
+                                )
+                            }
+                        }
+
+                        // Get and set a friend info
+                        val friendMap: MutableMap<String, Any> =
+                            HashMap()
+                        friendMap.apply {
+                            set(
+                                UserKey.KEY_USER_ID,
+                                listUser.getString(UserKey.KEY_USER_ID).toString(),
+                            )
+
+                            set(UserKey.KEY_USER_REQUEST, 0)
+
+                            set(
+                                UserKey.KEY_USER_PHOTO_URL,
+                                listUser.getString(UserKey.KEY_USER_PHOTO_URL).toString(),
+                            )
+
+                            set(
+                                UserKey.KEY_USER_NAME,
+                                listUser.getString(UserKey.KEY_USER_NAME).toString(),
+                            )
+
+                            set(
+                                UserKey.KEY_USER_EMAIL,
+                                listUser.getString(UserKey.KEY_USER_EMAIL).toString(),
+                            )
+
+                            set(UserKey.KEY_USER_FRIEND_ADDING_TIME, System.currentTimeMillis())
+
+                            set(
+                                UserKey.KEY_USER_COUNT_COMPLETED_TASKS,
+                                listUser.getLong(UserKey.KEY_USER_COUNT_COMPLETED_TASKS) ?: 0,
+                            )
+
+                            set(
+                                UserKey.KEY_USER_PRIVATE_MODE,
+                                listUser.getBoolean(UserKey.KEY_USER_PRIVATE_MODE) ?: false,
+                            )
+                        }
+
+                        // Send friend request
+                        val userInfo: MutableMap<String, Any> =
+                            HashMap()
+
+                        user?.let { currentUser ->
+                            val uid = currentUser.uid
+                            val email = currentUser.email.toString()
+                            val name = currentUser.displayName.toString()
+                            val photoUrl = currentUser.photoUrl.toString()
+
+                            userInfo.apply {
+                                userInfo[UserKey.KEY_USER_ID] =
+                                    uid
+                                userInfo[UserKey.KEY_USER_REQUEST] =
+                                    2
+                                userInfo[UserKey.KEY_USER_PHOTO_URL] =
+                                    photoUrl
+                                userInfo[UserKey.KEY_USER_NAME] =
+                                    name
+                                userInfo[UserKey.KEY_USER_FRIEND_ADDING_TIME] =
+                                    System.currentTimeMillis()
+                                userInfo[UserKey.KEY_USER_EMAIL] =
+                                    email
+                                userInfo[UserKey.KEY_USER_COUNT_COMPLETED_TASKS] =
+                                    totalCompleted
+                                userInfo[UserKey.KEY_USER_PRIVATE_MODE] =
+                                    userPrivateState
+                            }
+                        }
+
+                        userFriendIdReference(friendMap[UserKey.KEY_USER_ID] as String)?.set(
+                            friendMap,
+                        )?.await()
+
+                        friendUserIdReference(friendMap[UserKey.KEY_USER_ID] as String)?.set(
+                            userInfo
+                        )
+                            ?.await()
+
+                        FirebaseResult.Success(null)
+                    } else {
+                        return@firebaseCall FirebaseResult.Error(Exception(InviteFriendError.NOT_EXIST.name))
+                    }
+                }
+            } else {
+                return@firebaseCall FirebaseResult.Error(Exception(InviteFriendError.ADD_YOURSELF.name))
             }
-        } else {
-            return@firebaseCall FirebaseResult.Error(Exception(InviteFriendError.ADD_YOURSELF.name))
+            FirebaseResult.Success(null)
         }
-        FirebaseResult.Success(null)
-    }
 
-    suspend fun deleteFriend(friendId: String) = firebaseCall {
-        userFriendIdReference(friendId)?.delete()?.await()
-        friendUserIdReference(friendId)?.delete()?.await()
-        FirebaseResult.Success(null)
-    }
+    suspend fun deleteFriend(friendId: String) =
+        firebaseCall {
+            userFriendIdReference(friendId)?.delete()?.await()
+            friendUserIdReference(friendId)?.delete()?.await()
+            FirebaseResult.Success(null)
+        }
 
-    suspend fun denyFriendRequest(friendId: String) = firebaseCall {
-        val map: MutableMap<String, Any> = HashMap()
-        map[UserKey.KEY_USER_REQUEST] = 3
+    suspend fun denyFriendRequest(friendId: String) =
+        firebaseCall {
+            val map: MutableMap<String, Any> = HashMap()
+            map[UserKey.KEY_USER_REQUEST] = 3
 
-        userFriendIdReference(friendId)?.delete()?.await()
-        friendUserIdReference(user?.uid)?.update(map)?.await()
-        FirebaseResult.Success(null)
-    }
+            userFriendIdReference(friendId)?.delete()?.await()
+            friendUserIdReference(user?.uid)?.update(map)?.await()
+            FirebaseResult.Success(null)
+        }
 
     suspend fun downloadFriendTasks(friendId: String): FirebaseResult<List<TaskType>> =
         firebaseCall {
             // Getting friend's tasks
             val tasksDocument =
-                firestore?.document("Users/${friendId}/TaskList/Tasks")?.get()?.await()
+                firestore?.document("Users/$friendId/TaskList/Tasks")?.get()?.await()
 
             val mapFromTasks: MutableMap<String, Any>? = tasksDocument?.data
             if (mapFromTasks != null) {
-
                 val processedTaskList: MutableList<TaskType> = ArrayList()
                 val tasksList: MutableList<String> = ArrayList()
 
-                //Get map value from key task
+                // Get map value from key task
                 for ((key) in mapFromTasks) {
                     tasksList.add(key)
                 }
 
                 tasksList.forEach { task ->
-                    val title = tasksDocument.getString("$task.${TaskType.COLUMN_TITLE}")
-                        ?: "Error getting title"
+                    val title =
+                        tasksDocument.getString("$task.${TaskType.COLUMN_TITLE}")
+                            ?: "Error getting title"
 
                     if (title.isNotBlank()) {
                         val idTask = tasksList.size + tasksList.indexOf(task)
 
-                        val priority = Priority.valueOf(
-                            tasksDocument.getString("$task.${TaskType.COLUMN_PRIORITY}")
-                                ?: Priority.DEFAULT.name
-                        )
+                        val priority =
+                            Priority.valueOf(
+                                tasksDocument.getString("$task.${TaskType.COLUMN_PRIORITY}")
+                                    ?: Priority.DEFAULT.name,
+                            )
 
-                        val checked = tasksDocument.getBoolean("$task.${TaskType.COLUMN_CHECKED}")
-                            ?: false
+                        val checked =
+                            tasksDocument.getBoolean("$task.${TaskType.COLUMN_CHECKED}")
+                                ?: false
 
-                        val missed = tasksDocument.getBoolean("$task.${TaskType.COLUMN_MISSED}")
-                            ?: false
+                        val missed =
+                            tasksDocument.getBoolean("$task.${TaskType.COLUMN_MISSED}")
+                                ?: false
 
                         val totalChecked =
                             tasksDocument.getLong("$task.${TaskType.COLUMN_TOTAL_CHECKED}")
                                 ?.toInt() ?: 0
 
-                        val taskLiteType = TaskType(
-                            idTask = idTask,
-                            title = title,
-                            priority = priority,
-                            checked = checked,
-                            missed = missed,
-                            totalChecked = totalChecked,
-                        )
+                        val taskLiteType =
+                            TaskType(
+                                idTask = idTask,
+                                title = title,
+                                priority = priority,
+                                checked = checked,
+                                missed = missed,
+                                totalChecked = totalChecked,
+                            )
                         processedTaskList.add(taskLiteType)
                     }
                 }
@@ -708,12 +738,16 @@ class FirebaseRepository @Inject constructor(
             }
         }
 
-    suspend fun downloadFriendList(): FirebaseResult<List<DocumentSnapshot>> = firebaseCall {
-        val result = userFriendReference()?.get()?.await()
-        FirebaseResult.Success(result?.documents)
-    }
+    suspend fun downloadFriendList(): FirebaseResult<List<DocumentSnapshot>> =
+        firebaseCall {
+            val result = userFriendReference()?.get()?.await()
+            FirebaseResult.Success(result?.documents)
+        }
 
-    suspend fun updatePrivateFriend(friendId: String, privateState: Boolean) = firebaseCall {
+    suspend fun updatePrivateFriend(
+        friendId: String,
+        privateState: Boolean,
+    ) = firebaseCall {
         val userIndividualPrivate =
             hashMapOf<String, Any>(UserKey.KEY_USER_INDIVIDUAL_PRIVATE to privateState)
         val friendUserFriendPrivate =
@@ -723,7 +757,6 @@ class FirebaseRepository @Inject constructor(
         friendUserIdReference(user?.uid)?.update(friendUserFriendPrivate)?.await()
         FirebaseResult.Success(null)
     }
-
 
     object UserKey {
         const val KEY_USER_ID = "user_id"

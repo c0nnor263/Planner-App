@@ -13,11 +13,11 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.widget.addTextChangedListener
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import com.conboi.core.data.isEmailValid
 import com.conboi.plannerapp.R
 import com.conboi.plannerapp.databinding.FragmentSignInBinding
 import com.conboi.plannerapp.ui.MainActivity
 import com.conboi.plannerapp.ui.auth.LoginViewModel
-import com.conboi.plannerapp.utils.isEmailValid
 import com.conboi.plannerapp.utils.shared.LoadingDialogFragment
 import com.google.android.gms.common.api.ApiException
 import com.google.android.gms.common.api.CommonStatusCodes
@@ -29,7 +29,7 @@ class SignInFragment : Fragment() {
     private var _binding: FragmentSignInBinding? = null
     val binding get() = _binding!!
 
-    private val viewModel: SignInViewModel by activityViewModels ()
+    private val viewModel: SignInViewModel by activityViewModels()
     private val signViewModel: LoginViewModel by activityViewModels()
 
     private val signInRequestLauncher =
@@ -40,8 +40,9 @@ class SignInFragment : Fragment() {
         }
 
     override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
-        savedInstanceState: Bundle?
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?,
     ): View {
         _binding = FragmentSignInBinding.inflate(layoutInflater)
         binding.lifecycleOwner = this
@@ -88,7 +89,6 @@ class SignInFragment : Fragment() {
         _binding = null
     }
 
-
     private fun signInWithEmailAndPassword() {
         val loadingDialog = LoadingDialogFragment()
         loadingDialog.show(parentFragmentManager, LoadingDialogFragment.TAG)
@@ -99,7 +99,6 @@ class SignInFragment : Fragment() {
 
         binding.tilEmail.error = null
         binding.tilPassword.error = null
-
 
         if (!isEmailValid(email)) {
             binding.tilEmail.error = resources.getString(R.string.enter_email_alert)
@@ -113,7 +112,6 @@ class SignInFragment : Fragment() {
             binding.tilPassword.error = resources.getString(R.string.enter_password_length_alert)
             passCheck = false
         }
-
 
         if (passCheck) {
             viewModel.signInWithEmailAndPassword(email, password) { user, error ->
@@ -188,13 +186,13 @@ class SignInFragment : Fragment() {
                     Toast.makeText(
                         requireContext(),
                         resources.getString(R.string.password_reset_sent),
-                        Toast.LENGTH_SHORT
+                        Toast.LENGTH_SHORT,
                     ).show()
                 } else {
                     Toast.makeText(
                         requireContext(),
                         resources.getString(R.string.password_reset_error),
-                        Toast.LENGTH_SHORT
+                        Toast.LENGTH_SHORT,
                     ).show()
                 }
             }

@@ -26,8 +26,8 @@ import com.google.android.play.core.splitinstall.SplitInstallRequest
 import com.google.android.play.core.splitinstall.SplitInstallStateUpdatedListener
 import com.google.android.play.core.splitinstall.model.SplitInstallSessionStatus
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.launch
 import java.util.*
+import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class BottomSettingsFragment : BottomSheetDialogFragment() {
@@ -39,7 +39,7 @@ class BottomSettingsFragment : BottomSheetDialogFragment() {
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
-        savedInstanceState: Bundle?
+        savedInstanceState: Bundle?,
     ): View {
         _binding = FragmentBottomSettingsBinding.inflate(layoutInflater)
         binding.apply {
@@ -74,7 +74,10 @@ class BottomSettingsFragment : BottomSheetDialogFragment() {
         return binding.root
     }
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+    override fun onViewCreated(
+        view: View,
+        savedInstanceState: Bundle?,
+    ) {
         super.onViewCreated(view, savedInstanceState)
 
         setActvChoiceLanguage()
@@ -88,7 +91,7 @@ class BottomSettingsFragment : BottomSheetDialogFragment() {
                 state = privateModeState,
                 textId = R.string.private_state,
                 iconIdEnabled = R.drawable.ic_baseline_person_24,
-                iconIdDisabled = R.drawable.ic_baseline_person_outline_24
+                iconIdDisabled = R.drawable.ic_baseline_person_outline_24,
             )
         }
 
@@ -98,7 +101,7 @@ class BottomSettingsFragment : BottomSheetDialogFragment() {
                 state = vibrationState,
                 textId = R.string.vibration_state,
                 iconIdEnabled = R.drawable.ic_baseline_vibration_24,
-                iconIdDisabled = R.drawable.ic_vibrate_off_icon
+                iconIdDisabled = R.drawable.ic_vibrate_off_icon,
             )
         }
 
@@ -108,7 +111,7 @@ class BottomSettingsFragment : BottomSheetDialogFragment() {
                 state = reminderState,
                 textId = R.string.reminder_state,
                 iconIdEnabled = R.drawable.ic_baseline_access_alarm_24,
-                iconIdDisabled = R.drawable.ic_baseline_alarm_off_24
+                iconIdDisabled = R.drawable.ic_baseline_alarm_off_24,
             )
         }
 
@@ -118,7 +121,7 @@ class BottomSettingsFragment : BottomSheetDialogFragment() {
                 state = notificationsState,
                 textId = R.string.notification_state,
                 iconIdEnabled = R.drawable.ic_baseline_notifications_24,
-                iconIdDisabled = R.drawable.ic_baseline_notifications_off_24
+                iconIdDisabled = R.drawable.ic_baseline_notifications_off_24,
             )
         }
     }
@@ -139,108 +142,113 @@ class BottomSettingsFragment : BottomSheetDialogFragment() {
         _binding = null
     }
 
-
-    private fun setActvChoiceLanguage() = with(binding.actvLanguage) {
-        val items = resources.getStringArray(R.array.languages)
-        val selectedLanguage =
-            viewModel.selectedLanguage.value?.language!!
-        when (selectedLanguage) {
-            "en" -> {
-                setText(items[0])
-            }
-            "ru" -> {
-                setText(items[1])
-            }
-            "uk" -> {
-                setText(items[2])
-            }
-        }
-        if (viewModel.isLanguageCanChange(selectedLanguage)) {
-            saveLanguageEnable()
-        }
-
-
-        val adapter = ArrayAdapter(context, R.layout.dropmenu_language, items)
-        setAdapter(adapter)
-
-        setOnItemClickListener { _, _, position, _ ->
-            when (position) {
-                0 -> {
-                    if (viewModel.isLanguageCanChange("en")) {
-                        viewModel.updateSelectedLanguage(
-                            Locale(
-                                "en",
-                                "EN"
-                            )
-                        )
-                        saveLanguageEnable()
-                    } else {
-                        saveLanguageDisable()
-                    }
+    private fun setActvChoiceLanguage() =
+        with(binding.actvLanguage) {
+            val items = resources.getStringArray(R.array.languages)
+            val selectedLanguage =
+                viewModel.selectedLanguage.value?.language!!
+            when (selectedLanguage) {
+                "en" -> {
+                    setText(items[0])
                 }
-                1 -> {
-                    if (viewModel.isLanguageCanChange("ru")) {
-                        viewModel.updateSelectedLanguage(
-                            Locale(
-                                "ru",
-                                "RU"
-                            )
-                        )
-                        saveLanguageEnable()
-                    } else {
-                        saveLanguageDisable()
-                    }
+
+                "ru" -> {
+                    setText(items[1])
                 }
-                2 -> {
-                    if (viewModel.isLanguageCanChange("uk")) {
-                        viewModel.updateSelectedLanguage(
-                            Locale(
-                                "uk",
-                                "UA"
-                            )
-                        )
-                        saveLanguageEnable()
-                    } else {
-                        saveLanguageDisable()
-                    }
+
+                "uk" -> {
+                    setText(items[2])
                 }
             }
+            if (viewModel.isLanguageCanChange(selectedLanguage)) {
+                saveLanguageEnable()
+            }
+
+            val adapter = ArrayAdapter(context, R.layout.dropmenu_language, items)
+            setAdapter(adapter)
+
+            setOnItemClickListener { _, _, position, _ ->
+                when (position) {
+                    0 -> {
+                        if (viewModel.isLanguageCanChange("en")) {
+                            viewModel.updateSelectedLanguage(
+                                Locale(
+                                    "en",
+                                    "EN",
+                                ),
+                            )
+                            saveLanguageEnable()
+                        } else {
+                            saveLanguageDisable()
+                        }
+                    }
+
+                    1 -> {
+                        if (viewModel.isLanguageCanChange("ru")) {
+                            viewModel.updateSelectedLanguage(
+                                Locale(
+                                    "ru",
+                                    "RU",
+                                ),
+                            )
+                            saveLanguageEnable()
+                        } else {
+                            saveLanguageDisable()
+                        }
+                    }
+
+                    2 -> {
+                        if (viewModel.isLanguageCanChange("uk")) {
+                            viewModel.updateSelectedLanguage(
+                                Locale(
+                                    "uk",
+                                    "UA",
+                                ),
+                            )
+                            saveLanguageEnable()
+                        } else {
+                            saveLanguageDisable()
+                        }
+                    }
+                }
+            }
         }
-    }
 
     private fun buttonUpdateUI(
         button: MaterialButton,
         state: Boolean,
         @StringRes textId: Int,
         @DrawableRes iconIdEnabled: Int,
-        @DrawableRes iconIdDisabled: Int
+        @DrawableRes iconIdDisabled: Int,
     ) {
         button.apply {
-            text = resources.getString(
-                textId,
+            text =
+                resources.getString(
+                    textId,
+                    if (state) {
+                        resources.getString(R.string.on)
+                    } else {
+                        resources.getString(R.string.off)
+                    },
+                )
+            icon =
                 if (state) {
-                    resources.getString(R.string.on)
+                    setBackgroundColor(
+                        ContextCompat.getColor(
+                            requireContext(),
+                            R.color.primaryDarkColorTree,
+                        ),
+                    )
+                    ContextCompat.getDrawable(context, iconIdEnabled)
                 } else {
-                    resources.getString(R.string.off)
+                    setBackgroundColor(
+                        ContextCompat.getColor(
+                            requireContext(),
+                            R.color.primaryDarkColorAir,
+                        ),
+                    )
+                    ContextCompat.getDrawable(context, iconIdDisabled)
                 }
-            )
-            icon = if (state) {
-                setBackgroundColor(
-                    ContextCompat.getColor(
-                        requireContext(),
-                        R.color.primaryDarkColorTree
-                    )
-                )
-                ContextCompat.getDrawable(context, iconIdEnabled)
-            } else {
-                setBackgroundColor(
-                    ContextCompat.getColor(
-                        requireContext(),
-                        R.color.primaryDarkColorAir
-                    )
-                )
-                ContextCompat.getDrawable(context, iconIdDisabled)
-            }
         }
     }
 
@@ -255,27 +263,26 @@ class BottomSettingsFragment : BottomSheetDialogFragment() {
                 binding.mBtnDeleteTasks.alpha = 0.5F
             }
         }
-
     }
 
-    private fun removeReminderUI() = viewLifecycleOwner.lifecycleScope.launch {
-        if (viewModel.isReminderAvailable()) {
-            binding.mBtnRemoveReminders.isEnabled = true
-            binding.mBtnRemoveReminders.alpha = 1.0F
-        } else {
-            binding.mBtnRemoveReminders.isEnabled = false
-            binding.mBtnRemoveReminders.alpha = 0.5F
+    private fun removeReminderUI() =
+        viewLifecycleOwner.lifecycleScope.launch {
+            if (viewModel.isReminderAvailable()) {
+                binding.mBtnRemoveReminders.isEnabled = true
+                binding.mBtnRemoveReminders.alpha = 1.0F
+            } else {
+                binding.mBtnRemoveReminders.isEnabled = false
+                binding.mBtnRemoveReminders.alpha = 0.5F
+            }
         }
-    }
-
 
     private fun saveLanguageEnable() {
         binding.mBtnSaveLanguage.isEnabled = true
         binding.mBtnSaveLanguage.setBackgroundColor(
             ContextCompat.getColor(
                 requireContext(),
-                R.color.primaryDarkColorTree
-            )
+                R.color.primaryDarkColorTree,
+            ),
         )
     }
 
@@ -284,38 +291,40 @@ class BottomSettingsFragment : BottomSheetDialogFragment() {
         binding.mBtnSaveLanguage.setBackgroundColor(
             ContextCompat.getColor(
                 requireContext(),
-                R.color.primaryDarkColorAir
-            )
+                R.color.primaryDarkColorAir,
+            ),
         )
     }
-
 
     @SuppressLint("SwitchIntDef")
     private fun saveNewLanguage() {
         saveLanguageDisable()
-        val listener = SplitInstallStateUpdatedListener { state ->
-            when (state.status()) {
-                SplitInstallSessionStatus.INSTALLED -> {
-                    viewModel.updateAppLanguage()
-                    dismiss()
-                    (requireActivity() as MainActivity).recreate()
-                }
-                SplitInstallSessionStatus.FAILED -> {
-                    Toast.makeText(
-                        requireContext(),
-                        state.errorCode().toString(),
-                        Toast.LENGTH_SHORT
-                    ).show()
+        val listener =
+            SplitInstallStateUpdatedListener { state ->
+                when (state.status()) {
+                    SplitInstallSessionStatus.INSTALLED -> {
+                        viewModel.updateAppLanguage()
+                        dismiss()
+                        (requireActivity() as MainActivity).recreate()
+                    }
+
+                    SplitInstallSessionStatus.FAILED -> {
+                        Toast.makeText(
+                            requireContext(),
+                            state.errorCode().toString(),
+                            Toast.LENGTH_SHORT,
+                        ).show()
+                    }
                 }
             }
-        }
 
         val splitInstallManager = SplitInstallManagerFactory.create(requireContext())
         splitInstallManager.registerListener(listener)
 
-        val request = SplitInstallRequest.newBuilder()
-            .addLanguage(Locale.forLanguageTag(viewModel.selectedLanguage.value!!.language))
-            .build()
+        val request =
+            SplitInstallRequest.newBuilder()
+                .addLanguage(Locale.forLanguageTag(viewModel.selectedLanguage.value!!.language))
+                .build()
 
         splitInstallManager.startInstall(request).addOnCompleteListener {
             splitInstallManager.unregisterListener(listener)
@@ -331,7 +340,7 @@ class BottomSettingsFragment : BottomSheetDialogFragment() {
                 Toast.makeText(
                     context,
                     resources.getString(R.string.tasks_deleted),
-                    Toast.LENGTH_SHORT
+                    Toast.LENGTH_SHORT,
                 ).show()
                 dialog.dismiss()
                 dismiss()
@@ -348,18 +357,18 @@ class BottomSettingsFragment : BottomSheetDialogFragment() {
             .setPositiveButton(resources.getString(R.string.confirm)) { dialog, _ ->
                 ContextCompat.getSystemService(
                     requireContext(),
-                    NotificationManager::class.java
+                    NotificationManager::class.java,
                 )?.cancelAll()
 
                 viewModel.cancelAllAlarmsType(
                     requireContext(),
-                    AlarmType.REMINDER
+                    AlarmType.REMINDER,
                 )
 
                 Toast.makeText(
                     context,
                     resources.getString(R.string.reminders_removed),
-                    Toast.LENGTH_SHORT
+                    Toast.LENGTH_SHORT,
                 ).show()
                 dialog.dismiss()
                 dismiss()

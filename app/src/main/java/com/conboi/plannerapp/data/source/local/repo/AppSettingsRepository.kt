@@ -3,33 +3,33 @@ package com.conboi.plannerapp.data.source.local.repo
 import android.content.SharedPreferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.lifecycle.asLiveData
+import com.conboi.core.domain.LANGUAGE
 import com.conboi.plannerapp.data.source.local.preferences.ALARM_IS_NOT_EMPTY
 import com.conboi.plannerapp.data.source.local.preferences.AlarmPreferencesDataStore
 import com.conboi.plannerapp.data.source.local.preferences.AppPreferencesDataStore
 import com.conboi.plannerapp.data.source.local.preferences.UserSettingsPreferencesDataStore
 import com.conboi.plannerapp.di.ActivitySharedPref
-import com.conboi.plannerapp.utils.LANGUAGE
 import dagger.Module
 import dagger.hilt.InstallIn
 import dagger.hilt.android.components.ActivityRetainedComponent
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
-import java.util.*
+import java.util.Locale
 import javax.inject.Inject
-
 
 @Module
 @InstallIn(ActivityRetainedComponent::class)
-class AppSettingsRepository @Inject constructor(
+class AppSettingsRepository
+@Inject
+constructor(
     private val appPreferencesDataStore: AppPreferencesDataStore,
     private val alarmPreferencesDataStore: AlarmPreferencesDataStore,
     private val userSettingsPreferencesDataStore: UserSettingsPreferencesDataStore,
-    @ActivitySharedPref val activitySharedPref: SharedPreferences
+    @ActivitySharedPref val activitySharedPref: SharedPreferences,
 ) {
     private val appPreferencesFlow = appPreferencesDataStore.preferencesFlow
     private val alarmPreferencesFlow = alarmPreferencesDataStore.preferencesFlow
     private val userSettingsPreferencesFlow = userSettingsPreferencesDataStore.preferencesFlow
-
 
     suspend fun getLastUserIdValue() = appPreferencesFlow.first().lastUserId
 
@@ -43,24 +43,28 @@ class AppSettingsRepository @Inject constructor(
 
     suspend fun getIsResubscribeShowedValue() = appPreferencesFlow.first().isResubscribeShowed
 
-
     suspend fun getPrivateModeStateValue() = userSettingsPreferencesFlow.first().privateState
 
-    fun getPrivateModeState() = combine(userSettingsPreferencesFlow) { it.first().privateState}.asLiveData()
+    fun getPrivateModeState() =
+        combine(userSettingsPreferencesFlow) { it.first().privateState }.asLiveData()
 
-    fun getVibrationModeState() = combine(userSettingsPreferencesFlow) { it.first().vibrationState }.asLiveData()
+    fun getVibrationModeState() =
+        combine(userSettingsPreferencesFlow) { it.first().vibrationState }.asLiveData()
 
-    fun getReminderModeState() = combine(userSettingsPreferencesFlow) { it.first().reminderState }.asLiveData()
+    fun getReminderModeState() =
+        combine(userSettingsPreferencesFlow) { it.first().reminderState }.asLiveData()
 
-    fun getNotificationModeState() = combine(userSettingsPreferencesFlow) { it.first().notificationState }.asLiveData()
+    fun getNotificationModeState() =
+        combine(userSettingsPreferencesFlow) { it.first().notificationState }.asLiveData()
 
-
-    suspend fun getAlarmIsNotEmpty() = alarmPreferencesFlow.first()[booleanPreferencesKey(
-        ALARM_IS_NOT_EMPTY
-    )] ?: false
+    suspend fun getAlarmIsNotEmpty() =
+        alarmPreferencesFlow.first()[
+            booleanPreferencesKey(
+                ALARM_IS_NOT_EMPTY,
+            ),
+        ] ?: false
 
     fun getCurrentLanguage() = activitySharedPref.getString(LANGUAGE, Locale.getDefault().language)
-
 
     suspend fun updateLastUserId(lastUserId: String) =
         appPreferencesDataStore.updateLastUserId(lastUserId)
@@ -68,15 +72,13 @@ class AppSettingsRepository @Inject constructor(
     suspend fun updateImportConfirmed(state: Boolean) =
         appPreferencesDataStore.updateImportConfirmed(state)
 
-    suspend fun updateFirstLaunch(state: Boolean) =
-        appPreferencesDataStore.updateFirstLaunch(state)
+    suspend fun updateFirstLaunch(state: Boolean) = appPreferencesDataStore.updateFirstLaunch(state)
 
     suspend fun updateEmailConfirmShowed(state: Boolean) =
         appPreferencesDataStore.updateEmailConfirmShowed(state)
 
     suspend fun updateResubscribeShowed(state: Boolean) =
         appPreferencesDataStore.updateResubscribeShowed(state)
-
 
     suspend fun updatePrivateState(state: Boolean) =
         userSettingsPreferencesDataStore.updatePrivateState(state)
@@ -90,10 +92,8 @@ class AppSettingsRepository @Inject constructor(
     suspend fun updateNotificationState(state: Boolean) =
         userSettingsPreferencesDataStore.updateNotificationState(state)
 
-
     fun updateAppLanguage(newLanguage: String) =
         activitySharedPref.edit().putString(LANGUAGE, newLanguage).apply()
-
 
     suspend fun successImport() {
         appPreferencesDataStore.updateImportConfirmed(true)

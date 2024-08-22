@@ -9,7 +9,7 @@
 
         <variable
             name="task"
-            type="com.conboi.plannerapp.data.model.TaskType" />
+            type="com.conboi.core.data.model.TaskType"/>
     </data>
 
     <com.google.android.material.card.MaterialCardView

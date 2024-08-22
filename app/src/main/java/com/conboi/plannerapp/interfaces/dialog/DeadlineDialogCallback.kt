@@ -1,8 +1,12 @@
 package com.conboi.plannerapp.interfaces.dialog
 
-import java.util.*
+import java.util.Calendar
 
 interface DeadlineDialogCallback {
-    fun saveDeadline(calendar: Calendar, missed: Boolean)
+    fun saveDeadline(
+        calendar: Calendar,
+        missed: Boolean,
+    )
+
     fun removeDeadline()
 }

@@ -6,8 +6,10 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 
 @HiltViewModel
-class BottomNavigationViewModel @Inject constructor(
-    userRepository: UserRepository
+class BottomNavigationViewModel
+@Inject
+constructor(
+    userRepository: UserRepository,
 ) : ViewModel() {
     val user = userRepository.getUser()
     val isEmailVerified = user?.isEmailVerified == true

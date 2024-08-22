@@ -7,18 +7,20 @@ import com.conboi.plannerapp.data.source.local.repo.TaskRepository
 import com.conboi.plannerapp.di.IODispatcher
 import com.conboi.plannerapp.utils.AlarmType
 import dagger.hilt.android.lifecycle.HiltViewModel
+import java.util.*
+import javax.inject.Inject
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.util.*
-import javax.inject.Inject
 
 @HiltViewModel
-class BottomSettingsViewModel @Inject constructor(
+class BottomSettingsViewModel
+@Inject
+constructor(
     private val savedStateHandle: SavedStateHandle,
     private val appSettingsRepository: AppSettingsRepository,
     private val taskRepository: TaskRepository,
-    @IODispatcher private val ioDispatcher: CoroutineDispatcher
+    @IODispatcher private val ioDispatcher: CoroutineDispatcher,
 ) : ViewModel() {
     private val appCurrentLanguage = appSettingsRepository.getCurrentLanguage()
 
@@ -31,7 +33,6 @@ class BottomSettingsViewModel @Inject constructor(
     val reminderState: LiveData<Boolean> = appSettingsRepository.getReminderModeState()
     val notificationState: LiveData<Boolean> = appSettingsRepository.getNotificationModeState()
 
-
     fun getTasksSize() = taskRepository.getTaskSize()
 
     fun updateSelectedLanguage(newLang: Locale) {
@@ -41,32 +42,39 @@ class BottomSettingsViewModel @Inject constructor(
     fun updateAppLanguage() =
         viewModelScope.launch { appSettingsRepository.updateAppLanguage(selectedLanguage.value!!.language) }
 
-    fun updatePrivateModeState() = viewModelScope.launch {
-        appSettingsRepository.updatePrivateState(privateState.value!!.not())
-    }
+    fun updatePrivateModeState() =
+        viewModelScope.launch {
+            appSettingsRepository.updatePrivateState(privateState.value!!.not())
+        }
 
-    fun updateVibrationModeState() = viewModelScope.launch {
-        appSettingsRepository.updateVibrationState(vibrationState.value!!.not())
-    }
+    fun updateVibrationModeState() =
+        viewModelScope.launch {
+            appSettingsRepository.updateVibrationState(vibrationState.value!!.not())
+        }
 
-    fun updateReminderModeState() = viewModelScope.launch {
-        appSettingsRepository.updateReminderState(reminderState.value!!.not())
-    }
+    fun updateReminderModeState() =
+        viewModelScope.launch {
+            appSettingsRepository.updateReminderState(reminderState.value!!.not())
+        }
 
-    fun updateNotificationModeState() = viewModelScope.launch {
-        appSettingsRepository.updateNotificationState(notificationState.value!!.not())
-    }
+    fun updateNotificationModeState() =
+        viewModelScope.launch {
+            appSettingsRepository.updateNotificationState(notificationState.value!!.not())
+        }
 
-    fun cancelAllAlarmsType(context: Context, alarmType: AlarmType) =
-        taskRepository.cancelAllAlarmsType(context, alarmType)
-
+    fun cancelAllAlarmsType(
+        context: Context,
+        alarmType: AlarmType,
+    ) = taskRepository.cancelAllAlarmsType(context, alarmType)
 
     fun deleteAllTasks(context: Context) =
-        viewModelScope.launch { withContext(ioDispatcher) { taskRepository.deleteAllTasks(context) } }
+        viewModelScope.launch {
+            withContext(
+                ioDispatcher,
+            ) { taskRepository.deleteAllTasks(context) }
+        }
 
-
-    fun isLanguageCanChange(lang: String): Boolean =
-        appCurrentLanguage.equals(lang).not()
+    fun isLanguageCanChange(lang: String): Boolean = appCurrentLanguage.equals(lang).not()
 
     suspend fun isReminderAvailable(): Boolean {
         val isFileInitialized = appSettingsRepository.getAlarmIsNotEmpty()
@@ -81,7 +89,7 @@ class BottomSettingsViewModel @Inject constructor(
     fun retrieveState() {
         savedStateHandle.getLiveData<Locale>(SELECTED_LANGUAGE).value?.let {
             updateSelectedLanguage(
-                it
+                it,
             )
         }
     }

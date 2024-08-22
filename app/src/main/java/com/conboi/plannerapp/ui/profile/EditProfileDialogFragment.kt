@@ -10,10 +10,10 @@ import androidx.appcompat.app.AlertDialog
 import androidx.core.widget.addTextChangedListener
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.activityViewModels
+import com.conboi.core.data.showErrorToast
 import com.conboi.plannerapp.R
 import com.conboi.plannerapp.databinding.FragmentEditProfileDialogBinding
 import com.conboi.plannerapp.interfaces.dialog.EditProfileDialogCallback
-import com.conboi.plannerapp.utils.showErrorToast
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 
 class EditProfileDialogFragment(val callback: EditProfileDialogCallback) : DialogFragment() {
@@ -25,13 +25,14 @@ class EditProfileDialogFragment(val callback: EditProfileDialogCallback) : Dialo
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         _binding = FragmentEditProfileDialogBinding.inflate(layoutInflater)
 
-        val thisDialog = MaterialAlertDialogBuilder(requireContext())
-            .setView(binding.root)
-            .setTitle(resources.getString(R.string.edit_profile))
-            .setCancelable(false)
-            .setPositiveButton(resources.getString(R.string.save), null)
-            .setNegativeButton(resources.getString(R.string.cancel), null)
-            .create()
+        val thisDialog =
+            MaterialAlertDialogBuilder(requireContext())
+                .setView(binding.root)
+                .setTitle(resources.getString(R.string.edit_profile))
+                .setCancelable(false)
+                .setPositiveButton(resources.getString(R.string.save), null)
+                .setNegativeButton(resources.getString(R.string.cancel), null)
+                .create()
 
         thisDialog.setOnShowListener { dialog ->
             val positiveButton = (dialog as AlertDialog).getButton(AlertDialog.BUTTON_POSITIVE)
@@ -45,7 +46,6 @@ class EditProfileDialogFragment(val callback: EditProfileDialogCallback) : Dialo
                 val user = viewModel.user ?: return@setOnClickListener
 
                 if (newName.isNotBlank() || newEmail.isNotBlank() || newPassword.isNotBlank()) {
-
                     if (newName.isNotBlank()) {
                         if (newName != user.displayName.toString()) {
                             viewModel.updateUserName(newName)
@@ -57,7 +57,7 @@ class EditProfileDialogFragment(val callback: EditProfileDialogCallback) : Dialo
                     }
                     if (currentPassword.isNotBlank()) {
                         viewModel.reauthenticate(
-                            currentPassword
+                            currentPassword,
                         ) { _, error ->
                             if (error == null) {
                                 if (newEmail.isNotBlank()) {
@@ -81,7 +81,7 @@ class EditProfileDialogFragment(val callback: EditProfileDialogCallback) : Dialo
                             } else {
                                 binding.tilCurrentPassword.error =
                                     resources.getString(
-                                        R.string.password_is_invalid
+                                        R.string.password_is_invalid,
                                     )
                                 binding.tietCurrentPassword.text = null
 
@@ -96,7 +96,7 @@ class EditProfileDialogFragment(val callback: EditProfileDialogCallback) : Dialo
                     Toast.makeText(
                         requireContext(),
                         resources.getString(R.string.specify_fields),
-                        Toast.LENGTH_SHORT
+                        Toast.LENGTH_SHORT,
                     ).show()
                 }
                 callback.resetUser(user)
@@ -111,10 +111,13 @@ class EditProfileDialogFragment(val callback: EditProfileDialogCallback) : Dialo
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
-        savedInstanceState: Bundle?
+        savedInstanceState: Bundle?,
     ): View = binding.root
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+    override fun onViewCreated(
+        view: View,
+        savedInstanceState: Bundle?,
+    ) {
         super.onViewCreated(view, savedInstanceState)
         binding.tietNewName.addTextChangedListener {
             if (it?.toString()?.isNotBlank() == true) {

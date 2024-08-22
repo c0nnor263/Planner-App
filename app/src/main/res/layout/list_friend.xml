@@ -7,7 +7,7 @@
 
         <variable
             name="friend"
-            type="com.conboi.plannerapp.data.model.FriendType" />
+            type="com.conboi.core.data.model.FriendType"/>
     </data>
 
     <com.google.android.material.card.MaterialCardView

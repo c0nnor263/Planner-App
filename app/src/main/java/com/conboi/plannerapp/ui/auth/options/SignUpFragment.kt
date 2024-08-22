@@ -8,12 +8,12 @@ import android.widget.Toast
 import androidx.core.widget.addTextChangedListener
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import com.conboi.core.data.isEmailValid
+import com.conboi.core.data.showErrorToast
 import com.conboi.plannerapp.R
 import com.conboi.plannerapp.databinding.FragmentSignUpBinding
 import com.conboi.plannerapp.ui.auth.LoginViewModel
-import com.conboi.plannerapp.utils.isEmailValid
 import com.conboi.plannerapp.utils.shared.LoadingDialogFragment
-import com.conboi.plannerapp.utils.showErrorToast
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -25,8 +25,9 @@ class SignUpFragment : Fragment() {
     private val signViewModel: LoginViewModel by activityViewModels()
 
     override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
-        savedInstanceState: Bundle?
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?,
     ): View {
         _binding = FragmentSignUpBinding.inflate(layoutInflater)
         binding.lifecycleOwner = this
@@ -120,7 +121,7 @@ class SignUpFragment : Fragment() {
                     Toast.makeText(
                         requireContext(),
                         resources.getString(R.string.you_sent_email_confirm),
-                        Toast.LENGTH_SHORT
+                        Toast.LENGTH_SHORT,
                     ).show()
                     viewModel.sendConfirmationEmail { _, error ->
                         if (error == null) {

@@ -7,7 +7,7 @@
     <fragment
         android:id="@+id/mainFragment"
         tools:layout="@layout/fragment_main"
-        android:name="com.conboi.plannerapp.ui.main.MainFragment"
+        android:name="com.conboi.features.main.MainFragment"
         android:label="mainFragment">
         <action
             android:id="@+id/action_mainFragment_to_searchFragment"
@@ -19,7 +19,7 @@
 
     <fragment
         android:id="@+id/friendsFragment"
-        android:name="com.conboi.plannerapp.ui.friend.FriendsFragment"
+        android:name="com.conboi.features.friend.FriendsFragment"
         android:label="Friends"
         tools:layout="@layout/fragment_friends" >
         <action
@@ -33,7 +33,7 @@
         tools:layout="@layout/fragment_bottom_settings" />
     <fragment
         android:id="@+id/taskDetailsFragment"
-        android:name="com.conboi.plannerapp.ui.main.task.TaskDetailFragment"
+        android:name="com.conboi.features.main.task.TaskDetailFragment"
         android:label="Edit task"
         tools:layout="@layout/fragment_task_detail">
         <argument
@@ -43,7 +43,7 @@
     </fragment>
     <fragment
         android:id="@+id/searchFragment"
-        android:name="com.conboi.plannerapp.ui.main.search.SearchFragment"
+        android:name="com.conboi.features.main.search.SearchFragment"
         android:label="fragment_search"
         tools:layout="@layout/fragment_search" >
         <action
@@ -66,12 +66,12 @@
     </fragment>
     <fragment
         android:id="@+id/friendDetailsFragment"
-        android:name="com.conboi.plannerapp.ui.friend.details.FriendDetailsFragment"
+        android:name="com.conboi.features.friend.details.FriendDetailsFragment"
         android:label="FriendFragment"
         tools:layout="@layout/fragment_friend_details">
         <argument
             android:name="friend"
-            app:argType="com.conboi.plannerapp.data.model.FriendType" />
+            app:argType="com.conboi.core.data.model.FriendType"/>
     </fragment>
     <fragment
         android:id="@+id/subscribeFragment"

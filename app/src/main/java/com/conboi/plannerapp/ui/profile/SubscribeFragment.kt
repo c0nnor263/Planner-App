@@ -18,20 +18,20 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
 import com.android.billingclient.api.BillingFlowParams
+import com.conboi.core.data.isAppInternetConnected
+import com.conboi.core.data.showErrorToast
+import com.conboi.core.domain.enums.PremiumType
 import com.conboi.plannerapp.R
 import com.conboi.plannerapp.data.source.remote.repo.FirebaseRepository
 import com.conboi.plannerapp.databinding.FragmentSubscribeBinding
 import com.conboi.plannerapp.ui.MainActivity
-import com.conboi.plannerapp.utils.PremiumType
-import com.conboi.plannerapp.utils.isAppInternetConnected
 import com.conboi.plannerapp.utils.shared.LoadingDialogFragment
-import com.conboi.plannerapp.utils.showErrorToast
 import com.google.android.material.imageview.ShapeableImageView
 import com.google.android.material.transition.MaterialSharedAxis
 import com.qonversion.android.sdk.Qonversion
-import com.qonversion.android.sdk.dto.QEntitlement
-import com.qonversion.android.sdk.dto.QEntitlementRenewState
 import com.qonversion.android.sdk.dto.QonversionError
+import com.qonversion.android.sdk.dto.entitlements.QEntitlement
+import com.qonversion.android.sdk.dto.entitlements.QEntitlementRenewState
 import com.qonversion.android.sdk.dto.products.QProduct
 import com.qonversion.android.sdk.listeners.QonversionEntitlementsCallback
 import com.qonversion.android.sdk.listeners.QonversionProductsCallback
@@ -48,8 +48,9 @@ class SubscribeFragment : Fragment() {
     private var isCancelled = false
 
     override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
-        savedInstanceState: Bundle?
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?,
     ): View {
         _binding = FragmentSubscribeBinding.inflate(layoutInflater)
 
@@ -79,25 +80,29 @@ class SubscribeFragment : Fragment() {
         return binding.root
     }
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+    override fun onViewCreated(
+        view: View,
+        savedInstanceState: Bundle?,
+    ) {
         super.onViewCreated(view, savedInstanceState)
         postponeEnterTransition()
         view.doOnPreDraw { startPostponedEnterTransition() }
 
-        //Enter
-        enterTransition = MaterialSharedAxis(MaterialSharedAxis.X, true).apply {
-            duration = resources.getInteger(R.integer.reply_motion_duration_large).toLong()
-        }
-        returnTransition = MaterialSharedAxis(MaterialSharedAxis.X, false).apply {
-            duration = resources.getInteger(R.integer.reply_motion_duration_large).toLong()
-        }
+        // Enter
+        enterTransition =
+            MaterialSharedAxis(MaterialSharedAxis.X, true).apply {
+                duration = resources.getInteger(R.integer.reply_motion_duration_large).toLong()
+            }
+        returnTransition =
+            MaterialSharedAxis(MaterialSharedAxis.X, false).apply {
+                duration = resources.getInteger(R.integer.reply_motion_duration_large).toLong()
+            }
 
         binding.tvBenefits.text =
             Html.fromHtml(
                 resources.getString(R.string.benefits),
-                HtmlCompat.FROM_HTML_MODE_LEGACY
+                HtmlCompat.FROM_HTML_MODE_LEGACY,
             )
-
 
         viewModel.premiumType.observe(viewLifecycleOwner) {
             when (it) {
@@ -143,7 +148,6 @@ class SubscribeFragment : Fragment() {
         viewModel.selectedPremiumType.removeObservers(this)
     }
 
-
     private fun showManageSubscriptionUI() {
         binding.tvStandardOptionTitle.text = resources.getString(R.string.manage_subscriptions)
         binding.tvStandardOptionPrice.text = null
@@ -167,12 +171,13 @@ class SubscribeFragment : Fragment() {
         standard: Boolean = false,
         month: Boolean = false,
         sixMonth: Boolean = false,
-        year: Boolean = false
+        year: Boolean = false,
     ) {
-        val color = ContextCompat.getColor(
-            requireContext(),
-            R.color.secondaryLightColorFire
-        )
+        val color =
+            ContextCompat.getColor(
+                requireContext(),
+                R.color.secondaryLightColorFire,
+            )
 
         binding.rbStandardOption.isChecked = standard
         binding.rbMonthOption.isChecked = month
@@ -189,20 +194,21 @@ class SubscribeFragment : Fragment() {
         binding.mCvSixMonthOption.strokeColor = if (sixMonth) color else Color.TRANSPARENT
         binding.mCvYearOption.strokeColor = if (year) color else Color.TRANSPARENT
 
-        val checkMark: ShapeableImageView = when (bufferSelected) {
-            0 -> binding.sivCheckMark1
-            1 -> binding.sivCheckMark2
-            2 -> binding.sivCheckMark3
-            3 -> binding.sivCheckMark4
-            else -> binding.sivCheckMark1
-        }
+        val checkMark: ShapeableImageView =
+            when (bufferSelected) {
+                0 -> binding.sivCheckMark1
+                1 -> binding.sivCheckMark2
+                2 -> binding.sivCheckMark3
+                3 -> binding.sivCheckMark4
+                else -> binding.sivCheckMark1
+            }
 
         if (isCancelled) {
             checkMark.setImageDrawable(
                 ContextCompat.getDrawable(
                     requireContext(),
-                    R.drawable.ic_baseline_help_24
-                )
+                    R.drawable.ic_baseline_help_24,
+                ),
             )
         }
     }
@@ -213,22 +219,24 @@ class SubscribeFragment : Fragment() {
         val isConnected = connectivityManager?.isAppInternetConnected()
 
         if (isConnected == true) {
-            Qonversion.shared.products(object : QonversionProductsCallback {
-                override fun onSuccess(products: Map<String, QProduct>) {
-                    if (products.isNotEmpty()) {
-                        updateContent(products)
+            Qonversion.shared.products(
+                object : QonversionProductsCallback {
+                    override fun onSuccess(products: Map<String, QProduct>) {
+                        if (products.isNotEmpty()) {
+                            updateContent(products)
+                        }
                     }
-                }
 
-                override fun onError(error: QonversionError) {
-                    showErrorToast(requireContext(), Exception(error.additionalMessage))
-                }
-            })
+                    override fun onError(error: QonversionError) {
+                        showErrorToast(requireContext(), Exception(error.additionalMessage))
+                    }
+                },
+            )
         } else {
             Toast.makeText(
                 requireContext(),
                 resources.getString(R.string.check_your_internet),
-                Toast.LENGTH_SHORT
+                Toast.LENGTH_SHORT,
             ).show()
             findNavController().navigateUp()
         }
@@ -261,21 +269,23 @@ class SubscribeFragment : Fragment() {
             }
         }
         Qonversion.shared.syncPurchases()
-        Qonversion.shared.checkEntitlements(object : QonversionEntitlementsCallback {
-            override fun onSuccess(permissions: Map<String, QEntitlement>) {
-                val premiumPermission = permissions[MainActivity.PREMIUM_PERMISSION]
+        Qonversion.shared.checkEntitlements(
+            object : QonversionEntitlementsCallback {
+                override fun onSuccess(permissions: Map<String, QEntitlement>) {
+                    val premiumPermission = permissions[MainActivity.PREMIUM_PERMISSION]
 
-                if (premiumPermission != null && premiumPermission.isActive) {
-                    if (premiumPermission.renewState == QEntitlementRenewState.Canceled) {
-                        isCancelled = true
+                    if (premiumPermission != null && premiumPermission.isActive) {
+                        if (premiumPermission.renewState == QEntitlementRenewState.Canceled) {
+                            isCancelled = true
+                        }
                     }
                 }
-            }
 
-            override fun onError(error: QonversionError) {
-                showErrorToast(requireContext(), Exception(error.additionalMessage))
-            }
-        })
+                override fun onError(error: QonversionError) {
+                    showErrorToast(requireContext(), Exception(error.additionalMessage))
+                }
+            },
+        )
     }
 
     private fun processSubscription() {
@@ -286,7 +296,8 @@ class SubscribeFragment : Fragment() {
             val loadingDialog = LoadingDialogFragment()
             loadingDialog.isCancelable = false
             loadingDialog.show(
-                childFragmentManager, LoadingDialogFragment.TAG
+                childFragmentManager,
+                LoadingDialogFragment.TAG,
             )
 
             when (selectedPremium) {
@@ -295,13 +306,13 @@ class SubscribeFragment : Fragment() {
                         purchaseSubscription(
                             loadingDialog,
                             MainActivity.MONTH_PRODUCT,
-                            PremiumType.MONTH
+                            PremiumType.MONTH,
                         )
                     } else {
                         updatePurchaseSubscription(
                             loadingDialog,
                             MainActivity.MONTH_PRODUCT,
-                            PremiumType.MONTH
+                            PremiumType.MONTH,
                         )
                     }
                 }
@@ -310,13 +321,13 @@ class SubscribeFragment : Fragment() {
                         purchaseSubscription(
                             loadingDialog,
                             MainActivity.SIX_MONTH_PRODUCT,
-                            PremiumType.SIX_MONTH
+                            PremiumType.SIX_MONTH,
                         )
                     } else {
                         updatePurchaseSubscription(
                             loadingDialog,
                             MainActivity.SIX_MONTH_PRODUCT,
-                            PremiumType.SIX_MONTH
+                            PremiumType.SIX_MONTH,
                         )
                     }
                 }
@@ -325,13 +336,13 @@ class SubscribeFragment : Fragment() {
                         purchaseSubscription(
                             loadingDialog,
                             MainActivity.YEAR_PRODUCT,
-                            PremiumType.YEAR
+                            PremiumType.YEAR,
                         )
                     } else {
                         updatePurchaseSubscription(
                             loadingDialog,
                             MainActivity.YEAR_PRODUCT,
-                            PremiumType.YEAR
+                            PremiumType.YEAR,
                         )
                     }
                 }
@@ -345,7 +356,7 @@ class SubscribeFragment : Fragment() {
     private fun purchaseSubscription(
         loadingDialog: LoadingDialogFragment,
         premiumProduct: String,
-        newPremiumType: PremiumType
+        newPremiumType: PremiumType,
     ) {
         val activity = activity as MainActivity
 
@@ -360,7 +371,7 @@ class SubscribeFragment : Fragment() {
                     if (premiumPermission != null && premiumPermission.isActive) {
                         viewModel.setNewPremium(
                             newPremiumType,
-                            hashMapOf(FirebaseRepository.UserKey.KEY_USER_PREMIUM_TYPE to newPremiumType.name)
+                            hashMapOf(FirebaseRepository.UserKey.KEY_USER_PREMIUM_TYPE to newPremiumType.name),
                         )
                     }
                     loadingDialog.dismiss()
@@ -370,18 +381,18 @@ class SubscribeFragment : Fragment() {
                 override fun onError(error: QonversionError) {
                     showErrorToast(
                         requireContext(),
-                        Exception(error.additionalMessage)
+                        Exception(error.additionalMessage),
                     )
                     loadingDialog.dismiss()
                 }
-
-            })
+            },
+        )
     }
 
     private fun updatePurchaseSubscription(
         loadingDialog: LoadingDialogFragment,
         premiumProduct: String,
-        newPremiumType: PremiumType
+        newPremiumType: PremiumType,
     ) {
         val activity = activity as MainActivity
         val prorationMode = BillingFlowParams.ProrationMode.IMMEDIATE_WITH_TIME_PRORATION
@@ -405,7 +416,7 @@ class SubscribeFragment : Fragment() {
                         viewModel.setNewPremium(
                             newPremiumType,
                             hashMapOf(FirebaseRepository.UserKey.KEY_USER_PREMIUM_TYPE to newPremiumType.name),
-                            true
+                            true,
                         )
                     }
                     loadingDialog.dismiss()
@@ -415,48 +426,52 @@ class SubscribeFragment : Fragment() {
                 override fun onError(error: QonversionError) {
                     showErrorToast(
                         requireContext(),
-                        Exception(error.additionalMessage)
+                        Exception(error.additionalMessage),
                     )
                     loadingDialog.dismiss()
                 }
-            })
+            },
+        )
     }
 
     private fun restorePurchases() {
         val loadingDialog = LoadingDialogFragment()
         loadingDialog.isCancelable = false
         loadingDialog.show(
-            childFragmentManager, LoadingDialogFragment.TAG
+            childFragmentManager,
+            LoadingDialogFragment.TAG,
         )
 
-        Qonversion.shared.restore(object : QonversionEntitlementsCallback {
-            override fun onSuccess(permissions: Map<String, QEntitlement>) {
-                val premiumPermission = permissions[MainActivity.PREMIUM_PERMISSION]
-                if (premiumPermission != null && premiumPermission.isActive) {
-                    viewModel.updatePremium(true)
-                    (requireActivity() as MainActivity).checkPermissions()
+        Qonversion.shared.restore(
+            object : QonversionEntitlementsCallback {
+                override fun onSuccess(permissions: Map<String, QEntitlement>) {
+                    val premiumPermission = permissions[MainActivity.PREMIUM_PERMISSION]
+                    if (premiumPermission != null && premiumPermission.isActive) {
+                        viewModel.updatePremium(true)
+                        (requireActivity() as MainActivity).checkPermissions()
+                    }
+                    loadingDialog.dismiss()
+                    findNavController().navigateUp()
+                    Toast.makeText(context, R.string.restored_purchases, Toast.LENGTH_SHORT).show()
                 }
-                loadingDialog.dismiss()
-                findNavController().navigateUp()
-                Toast.makeText(context, R.string.restored_purchases, Toast.LENGTH_SHORT).show()
-            }
 
-            override fun onError(error: QonversionError) {
-                loadingDialog.dismiss()
-                showErrorToast(requireContext(), Exception(error.additionalMessage))
-            }
-        })
+                override fun onError(error: QonversionError) {
+                    loadingDialog.dismiss()
+                    showErrorToast(requireContext(), Exception(error.additionalMessage))
+                }
+            },
+        )
     }
 
-
     private fun openSubscriptionSettings() {
-        val typeSubscription = when (viewModel.premiumType.value) {
-            PremiumType.STANDARD -> null
-            PremiumType.MONTH -> MainActivity.MONTH_PRODUCT
-            PremiumType.SIX_MONTH -> MainActivity.SIX_MONTH_PRODUCT
-            PremiumType.YEAR -> MainActivity.YEAR_PRODUCT
-            else -> null
-        }
+        val typeSubscription =
+            when (viewModel.premiumType.value) {
+                PremiumType.STANDARD -> null
+                PremiumType.MONTH -> MainActivity.MONTH_PRODUCT
+                PremiumType.SIX_MONTH -> MainActivity.SIX_MONTH_PRODUCT
+                PremiumType.YEAR -> MainActivity.YEAR_PRODUCT
+                else -> null
+            }
 
         typeSubscription?.let {
             val uri: Uri =

@@ -11,9 +11,11 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class SubscribeViewModel @Inject constructor(
+class SubscribeViewModel
+@Inject
+constructor(
     private val userRepository: UserRepository,
-    private val appSettingsRepository: AppSettingsRepository
+    private val appSettingsRepository: AppSettingsRepository,
 ) : ViewModel() {
     val premiumType = userRepository.getPremiumType()
     val selectedPremiumType = MutableLiveData<Int>()
@@ -22,12 +24,16 @@ class SubscribeViewModel @Inject constructor(
         selectedPremiumType.value = value
     }
 
-    fun updatePremium(state: Boolean) = viewModelScope.launch {
-        userRepository.updatePremium(state)
-    }
-
-    fun setNewPremium(newPremiumType: PremiumType, userInfo: HashMap<String, Any>, importConfirmed:Boolean = false) =
+    fun updatePremium(state: Boolean) =
         viewModelScope.launch {
+            userRepository.updatePremium(state)
+        }
+
+    fun setNewPremium(
+        newPremiumType: PremiumType,
+        userInfo: HashMap<String, Any>,
+        importConfirmed: Boolean = false,
+    ) = viewModelScope.launch {
             userRepository.updateUser(userInfo)
             userRepository.updatePremiumType(newPremiumType)
             appSettingsRepository.updateImportConfirmed(importConfirmed)

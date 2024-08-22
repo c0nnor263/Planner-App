@@ -8,7 +8,7 @@
 
         <variable
             name="layoutViewModel"
-            type="com.conboi.plannerapp.ui.main.task.dialog.ReminderDialogViewModel" />
+            type="com.conboi.features.main.task.dialog.ReminderDialogViewModel"/>
     </data>
 
     <ScrollView

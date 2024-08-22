@@ -1,14 +1,22 @@
 *.iml
 .gradle
 /local.properties
+/.idea/caches
+/.idea/libraries
+/.idea/modules.xml
+/.idea/workspace.xml
+/.idea/navEditor.xml
+/.idea/assetWizardSettings.xml
+/.idea/sonarlint
+/.idea/codeStyles
+/.idea/
 .DS_Store
 /build
-/.idea
 /captures
 .externalNativeBuild
 .cxx
-local.properties
-keystore.properties
-/pics
-/market_licensing
+*.properties
+/content
 
+/plannerApp-keystore.jks
+/.editorconfig

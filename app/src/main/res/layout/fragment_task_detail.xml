@@ -8,7 +8,7 @@
 
         <variable
             name="layoutViewModel"
-            type="com.conboi.plannerapp.ui.main.task.TaskDetailViewModel" />
+            type="com.conboi.features.main.task.TaskDetailViewModel"/>
     </data>
 
     <androidx.constraintlayout.widget.ConstraintLayout

@@ -1,8 +1,7 @@
 package com.conboi.plannerapp
 
-import com.conboi.plannerapp.ui.main.MainFragment
-import com.conboi.plannerapp.utils.AlarmType
-import com.conboi.plannerapp.utils.getUniqueRequestCode
+import com.conboi.core.data.getUniqueRequestCode
+import com.conboi.core.domain.enums.AlarmType
 import org.junit.Before
 import org.junit.Test
 
@@ -12,11 +11,11 @@ import org.junit.Test
  * See [testing documentation](http://d.android.com/tools/testing).
  */
 class ExampleUnitTest {
-    private lateinit var SUT: MainFragment
+    private lateinit var SUT: com.conboi.features.main.MainFragment
 
     @Before
     fun setUp() {
-        SUT = MainFragment()
+        SUT = com.conboi.features.main.MainFragment()
     }
 
     @Test

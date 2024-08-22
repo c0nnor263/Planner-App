@@ -1,17 +1,23 @@
 package com.conboi.plannerapp.ui.auth.options
 
-import androidx.lifecycle.*
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.SavedStateHandle
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.conboi.plannerapp.data.source.remote.repo.FirebaseRepository
 import com.google.firebase.auth.FirebaseUser
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.launch
 import javax.inject.Inject
+import kotlinx.coroutines.launch
 
 @HiltViewModel
-class SignUpViewModel @Inject constructor(
-    val savedStateHandle: SavedStateHandle, val firebaseRepository: FirebaseRepository
+class SignUpViewModel
+@Inject
+constructor(
+    val savedStateHandle: SavedStateHandle,
+    val firebaseRepository: FirebaseRepository,
 ) : ViewModel() {
-
     private val _bufferName = MutableLiveData("")
     val bufferName: LiveData<String> = _bufferName
 
@@ -23,7 +29,6 @@ class SignUpViewModel @Inject constructor(
 
     private val _bufferRepeatPassword = MutableLiveData("")
     val bufferRepeatPassword: LiveData<String> = _bufferRepeatPassword
-
 
     fun updateBufferName(value: String) {
         _bufferName.value = value
@@ -42,12 +47,12 @@ class SignUpViewModel @Inject constructor(
     }
 
     fun createUserWithEmailAndPassword(
-        displayName:String,
+        displayName: String,
         email: String,
         password: String,
-        callback: (FirebaseUser?, Exception?) -> Unit
+        callback: (FirebaseUser?, Exception?) -> Unit,
     ) {
-        firebaseRepository.createUserWithEmailAndPassword(displayName,email, password, callback)
+        firebaseRepository.createUserWithEmailAndPassword(displayName, email, password, callback)
     }
 
     fun sendConfirmationEmail(callback: (Any?, Exception?) -> Unit) =

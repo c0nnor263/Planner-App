@@ -25,14 +25,17 @@ class BottomNavigationFragment : BottomSheetDialogFragment() {
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
-        savedInstanceState: Bundle?
+        savedInstanceState: Bundle?,
     ): View {
         _binding =
             DataBindingUtil.inflate(inflater, R.layout.fragment_bottom_navigation, container, false)
         return binding.root
     }
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+    override fun onViewCreated(
+        view: View,
+        savedInstanceState: Bundle?,
+    ) {
         super.onViewCreated(view, savedInstanceState)
         binding.lifecycleOwner = this
         binding.user = viewModel.user
@@ -71,7 +74,6 @@ class BottomNavigationFragment : BottomSheetDialogFragment() {
         _binding = null
     }
 
-
     private fun navigateToSettings() {
         if (findNavController().currentDestination?.id == R.id.settingsFragment) {
             dismiss()
@@ -80,7 +82,7 @@ class BottomNavigationFragment : BottomSheetDialogFragment() {
         val settingsFragment = BottomSettingsFragment()
         settingsFragment.show(
             parentFragmentManager,
-            settingsFragment.tag
+            settingsFragment.tag,
         )
         dismiss()
     }

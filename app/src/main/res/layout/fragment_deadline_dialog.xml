@@ -6,7 +6,7 @@
         <import type="android.view.View" />
         <variable
             name="layoutViewModel"
-            type="com.conboi.plannerapp.ui.main.task.dialog.DeadlineDialogViewModel" />
+            type="com.conboi.features.main.task.dialog.DeadlineDialogViewModel"/>
     </data>
 
     <ScrollView

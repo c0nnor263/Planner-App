@@ -27,11 +27,23 @@ import androidx.navigation.NavController
 import androidx.navigation.NavDestination
 import androidx.navigation.fragment.NavHostFragment
 import androidx.preference.PreferenceManager
+import com.conboi.core.data.FirebaseUserLiveData
+import com.conboi.core.data.popBackStackAllInstances
+import com.conboi.core.data.showErrorToast
+import com.conboi.core.domain.FRIENDS_TAG
+import com.conboi.core.domain.LANGUAGE
+import com.conboi.core.domain.MAIN_TAG
+import com.conboi.core.domain.MAX_TASK_COUNT
+import com.conboi.core.domain.MIDDLE_COUNT
+import com.conboi.core.domain.OTHER_COLOR
+import com.conboi.core.domain.PROFILE_TAG
+import com.conboi.core.domain.SETTINGS_TAG
+import com.conboi.core.domain.enums.PremiumType
+import com.conboi.core.domain.enums.SynchronizationState
 import com.conboi.plannerapp.R
 import com.conboi.plannerapp.databinding.ActivityMainBinding
 import com.conboi.plannerapp.ui.bottomsheet.BottomNavigationFragment
 import com.conboi.plannerapp.utils.*
-import com.conboi.plannerapp.utils.shared.firebase.FirebaseUserLiveData
 import com.google.android.gms.ads.MobileAds
 import com.google.android.gms.auth.api.identity.BeginSignInRequest
 import com.google.android.gms.auth.api.identity.BeginSignInResult
@@ -44,9 +56,9 @@ import com.google.firebase.FirebaseApp
 import com.google.firebase.appcheck.FirebaseAppCheck
 import com.google.firebase.appcheck.safetynet.SafetyNetAppCheckProviderFactory
 import com.qonversion.android.sdk.Qonversion
-import com.qonversion.android.sdk.dto.QEntitlement
-import com.qonversion.android.sdk.dto.QEntitlementRenewState
 import com.qonversion.android.sdk.dto.QonversionError
+import com.qonversion.android.sdk.dto.entitlements.QEntitlement
+import com.qonversion.android.sdk.dto.entitlements.QEntitlementRenewState
 import com.qonversion.android.sdk.listeners.QonversionEntitlementsCallback
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
@@ -69,7 +81,7 @@ class MainActivity : AppCompatActivity(), NavController.OnDestinationChangedList
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        //Init UI
+        // Init UI
         val navHostFragment =
             supportFragmentManager.findFragmentById(R.id.navigation_host) as NavHostFragment
         navController = navHostFragment.navController
@@ -87,11 +99,11 @@ class MainActivity : AppCompatActivity(), NavController.OnDestinationChangedList
     override fun onDestinationChanged(
         controller: NavController,
         destination: NavDestination,
-        arguments: Bundle?
+        arguments: Bundle?,
     ) {
         appNavigation(
             destination = destination,
-            notifyIntent = arguments?.getBoolean(NOTIFY_INTENT) == true
+            notifyIntent = arguments?.getBoolean(NOTIFY_INTENT) == true,
         )
     }
 
@@ -115,7 +127,7 @@ class MainActivity : AppCompatActivity(), NavController.OnDestinationChangedList
         navController =
             (supportFragmentManager.findFragmentById(R.id.navigation_host) as NavHostFragment).navController
         appNavigation(
-            notifyIntent = intent?.getBooleanExtra(NOTIFY_INTENT, false) == true
+            notifyIntent = intent?.getBooleanExtra(NOTIFY_INTENT, false) == true,
         )
     }
 
@@ -126,16 +138,17 @@ class MainActivity : AppCompatActivity(), NavController.OnDestinationChangedList
             checkPermissions()
         }
         appNavigation(
-            notifyIntent = intent?.getBooleanExtra(NOTIFY_INTENT, false) == true
+            notifyIntent = intent?.getBooleanExtra(NOTIFY_INTENT, false) == true,
         )
     }
 
     override fun attachBaseContext(base: Context) {
         val activityPref = PreferenceManager.getDefaultSharedPreferences(base)
-        val lang = activityPref.getString(
-            LANGUAGE,
-            Locale.getDefault().language
-        ) ?: Locale.getDefault().language
+        val lang =
+            activityPref.getString(
+                LANGUAGE,
+                Locale.getDefault().language,
+            ) ?: Locale.getDefault().language
 
         val configuration = Configuration()
         val localeList = LocaleList(Locale(lang))
@@ -159,36 +172,36 @@ class MainActivity : AppCompatActivity(), NavController.OnDestinationChangedList
         navController.handleDeepLink(intent)
     }
 
-
     private fun initApp() {
         MobileAds.initialize(this)
         FirebaseApp.initializeApp(this)
         val firebaseAppCheck = FirebaseAppCheck.getInstance()
         firebaseAppCheck.installAppCheckProviderFactory(
-            SafetyNetAppCheckProviderFactory.getInstance()
+            SafetyNetAppCheckProviderFactory.getInstance(),
         )
         oneTapClient = Identity.getSignInClient(this)
-        signInRequest = BeginSignInRequest.Builder()
-            .setGoogleIdTokenRequestOptions(
-                BeginSignInRequest.GoogleIdTokenRequestOptions.builder()
-                    .setSupported(true)
-                    .setServerClientId(resources.getString(R.string.web_client_id))
-                    .setFilterByAuthorizedAccounts(false)
-                    .build()
-            )
-            .build()
+        signInRequest =
+            BeginSignInRequest.Builder()
+                .setGoogleIdTokenRequestOptions(
+                    BeginSignInRequest.GoogleIdTokenRequestOptions.builder()
+                        .setSupported(true)
+                        .setServerClientId(resources.getString(R.string.web_client_id))
+                        .setFilterByAuthorizedAccounts(false)
+                        .build(),
+                )
+                .build()
 
         createChannel(
             getString(R.string.reminder_notification_channel_id),
-            getString(R.string.reminder_notification_channel_name)
+            getString(R.string.reminder_notification_channel_name),
         )
         createChannel(
             getString(R.string.deadline_notification_channel_id),
-            getString(R.string.deadline_notification_channel_name)
+            getString(R.string.deadline_notification_channel_name),
         )
         createChannel(
             getString(R.string.friends_notification_channel_id),
-            getString(R.string.friends_notification_channel_name)
+            getString(R.string.friends_notification_channel_name),
         )
 
         viewModel.checkNewFriends { result, error ->
@@ -200,16 +213,16 @@ class MainActivity : AppCompatActivity(), NavController.OnDestinationChangedList
                                 this,
                                 resources.getString(
                                     R.string.notification_new_friend,
-                                    newFriend.user_name
+                                    newFriend.user_name,
                                 ),
-                                newFriend.user_id.toInt()
+                                newFriend.user_id.toInt(),
                             )
                     }
                 }
             }
         }
 
-        //Observers
+        // Observers
         viewModel.completedTaskSize.observe(this) {
             if (it > 0) {
                 if (navController.currentDestination?.id == R.id.mainFragment) {
@@ -229,7 +242,7 @@ class MainActivity : AppCompatActivity(), NavController.OnDestinationChangedList
                     SynchronizationState.PENDING_SYNC -> R.drawable.ic_baseline_sync_24
                     SynchronizationState.ERROR_SYNC -> R.drawable.ic_baseline_sync_problem_24
                     else -> R.drawable.ic_baseline_sync_disabled_24
-                }
+                },
             )
         }
 
@@ -238,7 +251,7 @@ class MainActivity : AppCompatActivity(), NavController.OnDestinationChangedList
                 resources.getString(
                     R.string.count_of_tasks,
                     it,
-                    MAX_TASK_COUNT + if (viewModel.premiumState.value == true) MIDDLE_COUNT else 0
+                    MAX_TASK_COUNT + if (viewModel.premiumState.value == true) MIDDLE_COUNT else 0,
                 )
         }
 
@@ -271,7 +284,7 @@ class MainActivity : AppCompatActivity(), NavController.OnDestinationChangedList
                     viewModel.saveLastUserID()
                     navController.popBackStackAllInstances(
                         navController.currentBackStackEntry?.destination?.id!!,
-                        true
+                        true,
                     )
                     if (navController.currentDestination?.id != R.id.loginFragment) {
                         navController.navigate(R.id.loginFragment)
@@ -282,10 +295,10 @@ class MainActivity : AppCompatActivity(), NavController.OnDestinationChangedList
                 null -> {}
             }
         }
-
     }
 
     private var lastClickTime: Long = 0
+
     private fun bottomAppBarNavigate() {
         if (SystemClock.elapsedRealtime() - lastClickTime < 500) return
         lastClickTime = SystemClock.elapsedRealtime()
@@ -293,28 +306,32 @@ class MainActivity : AppCompatActivity(), NavController.OnDestinationChangedList
         bottomNavDrawerFragment.show(supportFragmentManager, bottomNavDrawerFragment.tag)
     }
 
-    private fun createChannel(channelId: String, channelName: String) {
-        val notificationChannel = NotificationChannel(
-            channelId,
-            channelName,
-            NotificationManager.IMPORTANCE_HIGH
-        ).apply {
-            setShowBadge(true)
-            enableLights(true)
-            lightColor = Color.RED
-            enableVibration(true)
-        }
+    private fun createChannel(
+        channelId: String,
+        channelName: String,
+    ) {
+        val notificationChannel =
+            NotificationChannel(
+                channelId,
+                channelName,
+                NotificationManager.IMPORTANCE_HIGH,
+            ).apply {
+                setShowBadge(true)
+                enableLights(true)
+                lightColor = Color.RED
+                enableVibration(true)
+            }
 
         ContextCompat.getSystemService(this, NotificationManager::class.java)
             ?.createNotificationChannel(
-                notificationChannel
+                notificationChannel,
             )
     }
 
     private fun appNavigation(
         destination: NavDestination? =
             (supportFragmentManager.findFragmentById(R.id.navigation_host) as NavHostFragment).navController.currentDestination,
-        notifyIntent: Boolean
+        notifyIntent: Boolean,
     ) {
         var delay: Long = 0
         if (notifyIntent) {
@@ -336,72 +353,83 @@ class MainActivity : AppCompatActivity(), NavController.OnDestinationChangedList
     }
 
     fun checkPermissions() {
-        Qonversion.shared.checkEntitlements(object : QonversionEntitlementsCallback {
-            override fun onSuccess(permissions: Map<String, QEntitlement>) {
-                val premiumPermission = permissions[PREMIUM_PERMISSION]
+        Qonversion.shared.checkEntitlements(
+            object : QonversionEntitlementsCallback {
+                override fun onSuccess(permissions: Map<String, QEntitlement>) {
+                    val premiumPermission = permissions[PREMIUM_PERMISSION]
 
-                if (premiumPermission != null && premiumPermission.isActive) {
-                    viewModel.setPremiumUI()
+                    if (premiumPermission != null && premiumPermission.isActive) {
+                        viewModel.setPremiumUI()
 
-                    binding.tvCountTasks.text =
-                        resources.getString(
-                            R.string.count_of_tasks,
-                            viewModel.taskSize.value,
-                            MAX_TASK_COUNT + MIDDLE_COUNT
-                        )
+                        binding.tvCountTasks.text =
+                            resources.getString(
+                                R.string.count_of_tasks,
+                                viewModel.taskSize.value,
+                                MAX_TASK_COUNT + MIDDLE_COUNT,
+                            )
 
-                    lifecycleScope.launch {
-                        val resubscribeAlert = viewModel.getResubscribeAlert()
-                        val premiumType = viewModel.getPremiumType()
+                        lifecycleScope.launch {
+                            val resubscribeAlert = viewModel.getResubscribeAlert()
+                            val premiumType = viewModel.getPremiumType()
 
-                        when (premiumPermission?.renewState) {
-                            QEntitlementRenewState.NonRenewable,
-                            QEntitlementRenewState.WillRenew -> {
-                                if (resubscribeAlert) {
-                                    viewModel.updateResubscribeAlert(true)
+                            when (premiumPermission.renewState) {
+                                QEntitlementRenewState.NonRenewable,
+                                QEntitlementRenewState.WillRenew,
+                                -> {
+                                    if (resubscribeAlert) {
+                                        viewModel.updateResubscribeAlert(true)
+                                    }
                                 }
-                            }
 
-                            QEntitlementRenewState.BillingIssue -> {
-                                Toast.makeText(
-                                    this@MainActivity,
-                                    resources.getString(R.string.update_payment),
-                                    Toast.LENGTH_LONG
-                                ).show()
-                            }
-
-                            QEntitlementRenewState.Canceled -> {
-                                if (!resubscribeAlert) {
-                                    val premiumTypeMessage =
-                                        when (premiumType.name) {
-                                            PremiumType.STANDARD.name -> return@launch
-                                            PremiumType.MONTH.name -> "\"${resources.getString(R.string.month_subscription)}\""
-                                            PremiumType.SIX_MONTH.name -> "\"${resources.getString(R.string.six_month_subscription)}\""
-                                            PremiumType.YEAR.name -> "\"${resources.getString(R.string.year_subscription)}\""
-                                            else -> return@launch
-                                        }
-
-                                    val messageString = resources.getString(
-                                        R.string.you_have_active_subscription,
-                                        premiumTypeMessage
-                                    )
-
-                                    subscriptionStillActiveDialog(messageString)
-                                    viewModel.updateResubscribeAlert(true)
+                                QEntitlementRenewState.BillingIssue -> {
+                                    Toast.makeText(
+                                        this@MainActivity,
+                                        resources.getString(R.string.update_payment),
+                                        Toast.LENGTH_LONG,
+                                    ).show()
                                 }
-                            }
 
-                            QEntitlementRenewState.Unknown -> {}
-                            else -> {}
+                                QEntitlementRenewState.Canceled -> {
+                                    if (!resubscribeAlert) {
+                                        val premiumTypeMessage =
+                                            when (premiumType.name) {
+                                                PremiumType.STANDARD.name -> return@launch
+                                                PremiumType.MONTH.name -> "\"${resources.getString(R.string.month_subscription)}\""
+                                                PremiumType.SIX_MONTH.name -> "\"${
+                                                    resources.getString(
+                                                        R.string.six_month_subscription
+                                                    )
+                                                }\""
+
+                                                PremiumType.YEAR.name -> "\"${resources.getString(R.string.year_subscription)}\""
+                                                else -> return@launch
+                                            }
+
+                                        val messageString =
+                                            resources.getString(
+                                                R.string.you_have_active_subscription,
+                                                premiumTypeMessage,
+                                            )
+
+                                        subscriptionStillActiveDialog(messageString)
+                                        viewModel.updateResubscribeAlert(true)
+                                    }
+                                }
+
+                                QEntitlementRenewState.Unknown -> {}
+                                else -> {}
+                            }
                         }
+                    } else {
+                        setNonPremiumUI()
                     }
-                } else setNonPremiumUI()
-            }
+                }
 
-            override fun onError(error: QonversionError) {
-                showErrorToast(this@MainActivity, Exception(error.additionalMessage))
-            }
-        })
+                override fun onError(error: QonversionError) {
+                    showErrorToast(this@MainActivity, Exception(error.additionalMessage))
+                }
+            },
+        )
     }
 
     // Set UI for specific fragment
@@ -421,16 +449,17 @@ class MainActivity : AppCompatActivity(), NavController.OnDestinationChangedList
         setColor(MAIN_TAG)
     }
 
-    private fun setBottomAppBarForTaskDetails() = with(binding) {
-        updateFabMainWithDrawable(R.drawable.ic_baseline_check_24)
+    private fun setBottomAppBarForTaskDetails() =
+        with(binding) {
+            updateFabMainWithDrawable(R.drawable.ic_baseline_check_24)
 
-        hideBottomAppBar()
-        bottomAppBar.setFabAlignmentModeAndReplaceMenu(
-            BottomAppBar.FAB_ALIGNMENT_MODE_END,
-            R.menu.b_app_bar_empty_menu
-        )
-        setColor(MAIN_TAG)
-    }
+            hideBottomAppBar()
+            bottomAppBar.setFabAlignmentModeAndReplaceMenu(
+                BottomAppBar.FAB_ALIGNMENT_MODE_END,
+                R.menu.b_app_bar_empty_menu,
+            )
+            setColor(MAIN_TAG)
+        }
 
     private fun setBottomAppBarForSearch() {
         hideFabAndAppBar()
@@ -438,53 +467,55 @@ class MainActivity : AppCompatActivity(), NavController.OnDestinationChangedList
         setColor(OTHER_COLOR)
     }
 
-    private fun setBottomAppBarForFriends() = with(binding) {
-        checkPermissions()
-        hideSyncTotalContent()
+    private fun setBottomAppBarForFriends() =
+        with(binding) {
+            checkPermissions()
+            hideSyncTotalContent()
 
-        updateFabMainWithDrawable(R.drawable.ic_baseline_person_search_24)
-        bottomAppBar.setFabAlignmentModeAndReplaceMenu(
-            BottomAppBar.FAB_ALIGNMENT_MODE_END,
-            R.menu.b_app_bar_empty_menu
-        )
-        showFabAndAppBar()
+            updateFabMainWithDrawable(R.drawable.ic_baseline_person_search_24)
+            bottomAppBar.setFabAlignmentModeAndReplaceMenu(
+                BottomAppBar.FAB_ALIGNMENT_MODE_END,
+                R.menu.b_app_bar_empty_menu,
+            )
+            showFabAndAppBar()
 
-        setColor(FRIENDS_TAG)
-    }
+            setColor(FRIENDS_TAG)
+        }
 
     private fun setBottomAppBarForFriendDetails() {
         hideFabAndAppBar()
         setColor(FRIENDS_TAG)
     }
 
-    private fun setBottomAppBarForProfile() = with(binding) {
-        checkPermissions()
-        hideSyncTotalContent()
+    private fun setBottomAppBarForProfile() =
+        with(binding) {
+            checkPermissions()
+            hideSyncTotalContent()
 
-        updateFabMainWithDrawable(R.drawable.ic_baseline_edit_24)
-        bottomAppBar.setFabAlignmentModeAndReplaceMenu(
-            BottomAppBar.FAB_ALIGNMENT_MODE_END,
-            R.menu.b_app_bar_empty_menu
-        )
-        showFabAndAppBar()
-        setColor(PROFILE_TAG)
-    }
+            updateFabMainWithDrawable(R.drawable.ic_baseline_edit_24)
+            bottomAppBar.setFabAlignmentModeAndReplaceMenu(
+                BottomAppBar.FAB_ALIGNMENT_MODE_END,
+                R.menu.b_app_bar_empty_menu,
+            )
+            showFabAndAppBar()
+            setColor(PROFILE_TAG)
+        }
 
-    private fun setBottomAppBarForSubscribe() = with(binding) {
-        checkPermissions()
-        hideSyncTotalContent()
+    private fun setBottomAppBarForSubscribe() =
+        with(binding) {
+            checkPermissions()
+            hideSyncTotalContent()
 
-        updateFabMainWithDrawable(R.drawable.ic_baseline_check_24)
+            updateFabMainWithDrawable(R.drawable.ic_baseline_check_24)
 
-        bottomAppBar.setFabAlignmentModeAndReplaceMenu(
-            BottomAppBar.FAB_ALIGNMENT_MODE_END,
-            R.menu.b_app_bar_empty_menu
-        )
-        hideBottomAppBar()
+            bottomAppBar.setFabAlignmentModeAndReplaceMenu(
+                BottomAppBar.FAB_ALIGNMENT_MODE_END,
+                R.menu.b_app_bar_empty_menu,
+            )
+            hideBottomAppBar()
 
-        setColor(FRIENDS_TAG)
-    }
-
+            setColor(FRIENDS_TAG)
+        }
 
     // Theme color
     private fun setColor(codeColor: Int) {
@@ -501,6 +532,7 @@ class MainActivity : AppCompatActivity(), NavController.OnDestinationChangedList
 
     private fun settingColorNightTheme(code: Int) {
         @ColorInt val bottomAppBarColor: Int
+
         @ColorInt val fabMainColor: Int
         when (code) {
             MAIN_TAG -> {
@@ -533,6 +565,7 @@ class MainActivity : AppCompatActivity(), NavController.OnDestinationChangedList
 
     private fun settingColorLightTheme(code: Int) {
         @ColorInt val bottomAppBarColor: Int
+
         @ColorInt val fabMainColor: Int
         when (code) {
             MAIN_TAG -> {
@@ -563,12 +596,15 @@ class MainActivity : AppCompatActivity(), NavController.OnDestinationChangedList
         animateColorThemeChanging(bottomAppBarColor, fabMainColor)
     }
 
-    private fun animateColorThemeChanging(bottomAppBarColor: Int, fabMainColor: Int) {
+    private fun animateColorThemeChanging(
+        bottomAppBarColor: Int,
+        fabMainColor: Int,
+    ) {
         val defaultColor = binding.bottomAppBar.backgroundTint?.defaultColor
         ValueAnimator.ofObject(
             ArgbEvaluator(),
             defaultColor,
-            bottomAppBarColor
+            bottomAppBarColor,
         ).apply {
             duration = resources.getInteger(R.integer.color_animation_duration_large).toLong()
             addUpdateListener { animator ->
@@ -580,7 +616,7 @@ class MainActivity : AppCompatActivity(), NavController.OnDestinationChangedList
         ValueAnimator.ofObject(
             ArgbEvaluator(),
             defaultColor,
-            fabMainColor
+            fabMainColor,
         ).apply {
             duration =
                 resources.getInteger(R.integer.color_animation_duration_large).toLong()
@@ -591,18 +627,23 @@ class MainActivity : AppCompatActivity(), NavController.OnDestinationChangedList
         }
     }
 
-    fun vibrateDefaultAmplitude(times: Int, milliseconds: Long = 25) =
-        repeat(times) {
-            appVibrator?.vibrate(
-                VibrationEffect.createOneShot(
-                    milliseconds,
-                    VibrationEffect.DEFAULT_AMPLITUDE
-                )
-            )
-        }
+    fun vibrateDefaultAmplitude(
+        times: Int,
+        milliseconds: Long = 25,
+    ) = repeat(times) {
+        appVibrator?.vibrate(
+            VibrationEffect.createOneShot(
+                milliseconds,
+                VibrationEffect.DEFAULT_AMPLITUDE,
+            ),
+        )
+    }
 
-    //Hide soft keyboard
-    private fun isHideInput(view: View?, motionEvent: MotionEvent): Boolean {
+    // Hide soft keyboard
+    private fun isHideInput(
+        view: View?,
+        motionEvent: MotionEvent,
+    ): Boolean {
         if (view != null && view is EditText) {
             view.getLocationInWindow(intArrayOf(0, 0))
             val left = 0
@@ -621,29 +662,31 @@ class MainActivity : AppCompatActivity(), NavController.OnDestinationChangedList
         }
     }
 
+    private fun showSyncTotalContent() =
+        with(binding) {
+            tvCountTasks.visibility = View.VISIBLE
+            tvCountCompleted.visibility = View.VISIBLE
+            ivSyncStatus.visibility = View.VISIBLE
+        }
 
-    private fun showSyncTotalContent() = with(binding) {
-        tvCountTasks.visibility = View.VISIBLE
-        tvCountCompleted.visibility = View.VISIBLE
-        ivSyncStatus.visibility = View.VISIBLE
-    }
-
-    private fun hideSyncTotalContent() = with(binding) {
-        tvCountTasks.visibility = View.GONE
-        tvCountCompleted.visibility = View.GONE
-        ivSyncStatus.visibility = View.GONE
-    }
-
+    private fun hideSyncTotalContent() =
+        with(binding) {
+            tvCountTasks.visibility = View.GONE
+            tvCountCompleted.visibility = View.GONE
+            ivSyncStatus.visibility = View.GONE
+        }
 
     // Show and hide app bar and fab
-    private fun updateFabMainWithDrawable(@DrawableRes fabIconId: Int?) {
+    private fun updateFabMainWithDrawable(
+        @DrawableRes fabIconId: Int?,
+    ) {
         binding.fabMain.hide()
         fabIconId?.let {
             binding.fabMain.setImageDrawable(
                 ContextCompat.getDrawable(
                     binding.fabMain.context,
-                    fabIconId
-                )
+                    fabIconId,
+                ),
             )
         }
         binding.fabMain.show()
@@ -688,7 +731,7 @@ class MainActivity : AppCompatActivity(), NavController.OnDestinationChangedList
             resources.getString(
                 R.string.count_of_tasks,
                 viewModel.taskSize.value,
-                MAX_TASK_COUNT
+                MAX_TASK_COUNT,
             )
     }
 

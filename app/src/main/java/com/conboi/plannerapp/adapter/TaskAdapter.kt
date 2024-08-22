@@ -12,19 +12,18 @@ import androidx.core.widget.doOnTextChanged
 import androidx.recyclerview.widget.AsyncDifferConfig
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
+import com.conboi.core.data.interfaces.TaskListInterface
+import com.conboi.core.data.model.TaskType
+import com.conboi.core.domain.GLOBAL_START_DATE
+import com.conboi.core.domain.MIDDLE_COUNT
 import com.conboi.plannerapp.R
-import com.conboi.plannerapp.data.model.TaskType
 import com.conboi.plannerapp.databinding.ListTaskBinding
-import com.conboi.plannerapp.interfaces.TaskListInterface
-import com.conboi.plannerapp.utils.GLOBAL_START_DATE
-import com.conboi.plannerapp.utils.MIDDLE_COUNT
-
 
 class TaskAdapter(
     private val listener: TaskListInterface,
-    diffCallback: TaskTypeDiffCallback
+    diffCallback: TaskTypeDiffCallback,
 ) : ListAdapter<TaskType, TaskAdapter.ViewHolder>(
-    AsyncDifferConfig.Builder(diffCallback).build()
+    AsyncDifferConfig.Builder(diffCallback).build(),
 ) {
     private var premium = false
     private var middleListTime = GLOBAL_START_DATE
@@ -35,7 +34,10 @@ class TaskAdapter(
         var titleTimer: CountDownTimer? = null
         var bufferTask: TaskType? = null
 
-        fun bind(task: TaskType, isPremium: Boolean) = with(binding) {
+        fun bind(
+            task: TaskType,
+            isPremium: Boolean,
+        ) = with(binding) {
             bufferTask = task
             binding.task = task
             binding.executePendingBindings()
@@ -45,7 +47,10 @@ class TaskAdapter(
             if (isPremium) premiumUI() else nonPremiumUI()
         }
 
-        fun bindPayload(task: TaskType, payloads: MutableList<Any>) {
+        fun bindPayload(
+            task: TaskType,
+            payloads: MutableList<Any>,
+        ) {
             binding.checkBox.isChecked = task.checked
 
             val newTitle = payloads.first() as String
@@ -56,7 +61,6 @@ class TaskAdapter(
                 idleAnimationState()
             }
         }
-
 
         private fun complexCheckTask(hold: Boolean) {
             val position = bindingAdapterPosition
@@ -70,7 +74,7 @@ class TaskAdapter(
                     binding.checkBox.isChecked = true
                 }
                 if (titleString.isNotBlank()) {
-                    //Title is not empty
+                    // Title is not empty
                     if (hold) {
                         listener.onCheckBoxEvent(
                             task.copy(title = titleString),
@@ -85,7 +89,7 @@ class TaskAdapter(
                         )
                     }
                 } else {
-                    //Title is empty
+                    // Title is empty
                     binding.checkBox.isChecked = false
                     listener.onCheckBoxEvent(
                         task.copy(title = titleString),
@@ -96,7 +100,7 @@ class TaskAdapter(
             }
         }
 
-        //Default animation state for UI
+        // Default animation state for UI
         fun idleAnimationState() {
             checkMissedState()
             binding.ivSavingTitleIndicator.apply {
@@ -108,18 +112,19 @@ class TaskAdapter(
             binding.ivBtnOpenTask.visibility = View.VISIBLE
         }
 
-        //Checking for missed state
-        private fun checkMissedState() = with(binding) {
-            if (bufferTask?.missed == true) {
-                tietTitle.setTextColor(Color.WHITE)
-                tvTotalCheck.setTextColor(Color.WHITE)
-            } else {
-                tietTitle.setTextColor(defaultColors)
-                tvTotalCheck.setTextColor(defaultColors)
+        // Checking for missed state
+        private fun checkMissedState() =
+            with(binding) {
+                if (bufferTask?.missed == true) {
+                    tietTitle.setTextColor(Color.WHITE)
+                    tvTotalCheck.setTextColor(Color.WHITE)
+                } else {
+                    tietTitle.setTextColor(defaultColors)
+                    tvTotalCheck.setTextColor(defaultColors)
+                }
             }
-        }
 
-        //Saving values
+        // Saving values
         private fun instantSave() {
             titleTimer?.onFinish()
             idleAnimationState()
@@ -132,23 +137,23 @@ class TaskAdapter(
             (binding.ivSavingTitleIndicator.drawable as AnimatedVectorDrawable).start()
         }
 
-
-        //PremiumUIs
-        private fun premiumUI() = with(binding) {
-            tietTitle.setOnEditorActionListener { _, actionId, _ ->
-                if (actionId == EditorInfo.IME_ACTION_DONE
-                ) {
-                    instantSave()
-                    tietTitle.clearFocus()
+        // PremiumUIs
+        private fun premiumUI() =
+            with(binding) {
+                tietTitle.setOnEditorActionListener { _, actionId, _ ->
+                    if (actionId == EditorInfo.IME_ACTION_DONE
+                    ) {
+                        instantSave()
+                        tietTitle.clearFocus()
+                    }
+                    false
                 }
-                false
-            }
-            tietTitle.doOnTextChanged { text, _, _, _ ->
-                resetSavingTimer()
-                if (text?.isEmpty() == true) {
-                    clSubparent.setBackgroundResource(R.color.secondaryDarkColorWater)
+                tietTitle.doOnTextChanged { text, _, _, _ ->
+                    resetSavingTimer()
+                    if (text?.isEmpty() == true) {
+                        clSubparent.setBackgroundResource(R.color.secondaryDarkColorWater)
+                    }
                 }
-            }
             /*tietTitle.setOnFocusChangeListener { _, hasFocus ->
                 tilTitle.endIconMode = if (hasFocus) {
                     TextInputLayout.END_ICON_CLEAR_TEXT
@@ -157,62 +162,65 @@ class TaskAdapter(
                 }
             }*/
 
-            //ImageButton
-            ivBtnOpenTask.setOnClickListener {
-                val position = bindingAdapterPosition
-                if (position != RecyclerView.NO_POSITION) {
-                    instantSave()
-                    val task = getItem(position)
-                    listener.onClick(root, task.idTask)
+                // ImageButton
+                ivBtnOpenTask.setOnClickListener {
+                    val position = bindingAdapterPosition
+                    if (position != RecyclerView.NO_POSITION) {
+                        instantSave()
+                        val task = getItem(position)
+                        listener.onClick(root, task.idTask)
+                    }
                 }
+
+                // CheckBox
+                checkBox.setOnClickListener {
+                    complexCheckTask(false)
+                }
+                checkBox.setOnLongClickListener {
+                    complexCheckTask(true)
+                    true
+                }
+
+                tietTitle.isFocusable = true
+                ivBtnOpenTask.isFocusable = true
+                checkBox.isFocusable = true
+                clSubparent.alpha = 1.0F
             }
 
-            //CheckBox
-            checkBox.setOnClickListener {
-                complexCheckTask(false)
+        private fun nonPremiumUI() =
+            with(binding) {
+                tietTitle.setOnClickListener { listener.showPremiumDealDialog() }
+
+                // ImageButton
+                ivBtnOpenTask.setOnClickListener { listener.showPremiumDealDialog() }
+
+                // CheckBox
+                checkBox.setOnClickListener {
+                    listener.showPremiumDealDialog()
+                    checkBox.isChecked = false
+                }
+                checkBox.setOnLongClickListener {
+                    listener.showPremiumDealDialog()
+                    checkBox.isChecked = false
+                    true
+                }
+
+                tietTitle.isFocusable = false
+                ivBtnOpenTask.isFocusable = false
+                checkBox.isFocusable = false
+                clSubparent.alpha = 0.5F
             }
-            checkBox.setOnLongClickListener {
-                complexCheckTask(true)
-                true
-            }
-
-
-            tietTitle.isFocusable = true
-            ivBtnOpenTask.isFocusable = true
-            checkBox.isFocusable = true
-            clSubparent.alpha = 1.0F
-        }
-
-        private fun nonPremiumUI() = with(binding) {
-            tietTitle.setOnClickListener { listener.showPremiumDealDialog() }
-
-            //ImageButton
-            ivBtnOpenTask.setOnClickListener { listener.showPremiumDealDialog() }
-
-            //CheckBox
-            checkBox.setOnClickListener {
-                listener.showPremiumDealDialog()
-                checkBox.isChecked = false
-            }
-            checkBox.setOnLongClickListener {
-                listener.showPremiumDealDialog()
-                checkBox.isChecked = false
-                true
-            }
-
-            tietTitle.isFocusable = false
-            ivBtnOpenTask.isFocusable = false
-            checkBox.isFocusable = false
-            clSubparent.alpha = 0.5F
-        }
-
     }
 
-    override fun onBindViewHolder(vh: TaskAdapter.ViewHolder, position: Int) {
+    override fun onBindViewHolder(
+        vh: TaskAdapter.ViewHolder,
+        position: Int,
+    ) {
         val task = getItem(position)
 
-        //Check premium state
-        val isNotPremium = !premium &&
+        // Check premium state
+        val isNotPremium =
+            !premium &&
                 currentList.size > MIDDLE_COUNT &&
                 task.created >= middleListTime &&
                 middleListTime != GLOBAL_START_DATE
@@ -229,31 +237,32 @@ class TaskAdapter(
                 (ivSavingTitleIndicator.drawable as AnimatedVectorDrawable).start()
             }
 
-            vh.titleTimer = object : CountDownTimer(3000, 1000) {
-                override fun onTick(remainingTime: Long) {
-                    ivBtnOpenTask.visibility = View.GONE
-                    ivSavingTitleIndicator.visibility = View.VISIBLE
-                    if (remainingTime <= 1000 && remainingTime != 0.toLong()) {
-                        runSaveAnimation()
+            vh.titleTimer =
+                object : CountDownTimer(3000, 1000) {
+                    override fun onTick(remainingTime: Long) {
+                        ivBtnOpenTask.visibility = View.GONE
+                        ivSavingTitleIndicator.visibility = View.VISIBLE
+                        if (remainingTime <= 1000 && remainingTime != 0.toLong()) {
+                            runSaveAnimation()
+                        }
+                    }
+
+                    override fun onFinish() {
+                        val titleString = tietTitle.text.toString()
+                        vh.idleAnimationState()
+
+                        if (titleString != vh.bufferTask?.title) {
+                            listener.onTitleChanged(vh.bufferTask!!, titleString)
+                        }
                     }
                 }
-
-                override fun onFinish() {
-                    val titleString = tietTitle.text.toString()
-                    vh.idleAnimationState()
-
-                    if (titleString != vh.bufferTask?.title) {
-                        listener.onTitleChanged(vh.bufferTask!!, titleString)
-                    }
-                }
-            }
         }
     }
 
     override fun onBindViewHolder(
         vh: TaskAdapter.ViewHolder,
         position: Int,
-        payloads: MutableList<Any>
+        payloads: MutableList<Any>,
     ) {
         if (payloads.isEmpty()) {
             super.onBindViewHolder(vh, position, payloads)
@@ -267,13 +276,17 @@ class TaskAdapter(
         }
     }
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder = ViewHolder(
-        ListTaskBinding.inflate(
-            LayoutInflater.from(parent.context),
-            parent,
-            false
+    override fun onCreateViewHolder(
+        parent: ViewGroup,
+        viewType: Int,
+    ): ViewHolder =
+        ViewHolder(
+            ListTaskBinding.inflate(
+                LayoutInflater.from(parent.context),
+                parent,
+                false,
+            ),
         )
-    )
 
     override fun onViewRecycled(holder: ViewHolder) {
         holder.titleTimer?.onFinish()

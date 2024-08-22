@@ -7,9 +7,14 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import androidx.core.content.ContextCompat
+import com.conboi.core.data.getUniqueRequestCode
+import com.conboi.core.data.model.TaskType
+import com.conboi.core.domain.DEADLINE_REMINDER_HOURS
+import com.conboi.core.domain.GLOBAL_START_DATE
+import com.conboi.core.domain.enums.AlarmType
+import com.conboi.core.domain.enums.NotificationType
 import com.conboi.plannerapp.R
 import com.conboi.plannerapp.data.dao.TaskDao
-import com.conboi.plannerapp.data.model.TaskType
 import com.conboi.plannerapp.data.source.local.preferences.UserSettingsPreferencesDataStore
 import com.conboi.plannerapp.di.AppApplicationScope
 import com.conboi.plannerapp.di.IODispatcher
@@ -24,10 +29,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
-
 @AndroidEntryPoint
 class AlarmServiceReceiver : BroadcastReceiver() {
-
     companion object {
         private const val ACTION_BOOT_COMPLETED = "android.intent.action.BOOT_COMPLETED"
     }
@@ -49,14 +52,17 @@ class AlarmServiceReceiver : BroadcastReceiver() {
     @Inject
     lateinit var userSettingsPreferencesDataStore: UserSettingsPreferencesDataStore
 
-    override fun onReceive(context: Context?, intent: Intent?) {
+    override fun onReceive(
+        context: Context?,
+        intent: Intent?,
+    ) {
         if (intent!!.action == ACTION_BOOT_COMPLETED) {
             alarmUtil.onBootAlarms(context!!)
         } else {
             val idTask = intent.getIntExtra(TaskType.COLUMN_ID, 0)
             val notificationCode =
                 NotificationType.valueOf(
-                    intent.getStringExtra(NOTIFICATION_CODE) ?: NotificationType.REMINDER.name
+                    intent.getStringExtra(NOTIFICATION_CODE) ?: NotificationType.REMINDER.name,
                 )
 
             applicationScope.launch {
@@ -75,7 +81,7 @@ class AlarmServiceReceiver : BroadcastReceiver() {
 
     private fun showReminder(
         context: Context,
-        task: TaskType
+        task: TaskType,
     ) {
         applicationScope.launch {
             withContext(ioDispatcher) {
@@ -85,14 +91,13 @@ class AlarmServiceReceiver : BroadcastReceiver() {
                 if (isNotificationEnabled && isReminderEnabled) {
                     ContextCompat.getSystemService(
                         context,
-                        NotificationManager::
-                        class.java
+                        NotificationManager::class.java,
                     )?.sendReminderNotification(
                         context,
                         context.resources.getString(R.string.reminder_msg),
                         task.idTask,
                         task.title,
-                        task.created
+                        task.created,
                     )
                 }
 
@@ -125,17 +130,16 @@ class AlarmServiceReceiver : BroadcastReceiver() {
                 if (checkNotificationSetting()) {
                     ContextCompat.getSystemService(
                         context,
-                        NotificationManager::
-                        class.java
+                        NotificationManager::class.java,
                     )?.sendDeadlineNotification(
                         context,
                         context.resources.getString(
                             R.string.deadline_reminder,
-                            DEADLINE_REMINDER_HOURS
+                            DEADLINE_REMINDER_HOURS,
                         ),
                         task.idTask,
                         task.title,
-                        task.created
+                        task.created,
                     )
                 }
 
@@ -149,8 +153,8 @@ class AlarmServiceReceiver : BroadcastReceiver() {
                             putExtra(TaskType.COLUMN_ID, task.idTask)
                             putExtra(NOTIFICATION_CODE, NotificationType.DEADLINE.name)
                         },
-                        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-                    )
+                        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+                    ),
                 )
             }
         }
@@ -168,14 +172,13 @@ class AlarmServiceReceiver : BroadcastReceiver() {
                     if (checkNotificationSetting()) {
                         ContextCompat.getSystemService(
                             context,
-                            NotificationManager::
-                            class.java
+                            NotificationManager::class.java,
                         )?.sendDeadlineNotification(
                             context,
                             context.resources.getString(R.string.deadline_msg),
                             task.idTask,
                             task.title,
-                            task.created
+                            task.created,
                         )
                     }
                     taskDao.update(task.copy(missed = true))
@@ -190,6 +193,4 @@ class AlarmServiceReceiver : BroadcastReceiver() {
 
     private suspend fun checkReminderSetting(): Boolean =
         userSettingsPreferencesDataStore.preferencesFlow.first().reminderState
-
 }
-

@@ -15,7 +15,6 @@ import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import dagger.hilt.android.AndroidEntryPoint
 
-
 @AndroidEntryPoint
 class BottomActionFragment : BottomSheetDialogFragment() {
     private var _binding: FragmentBottomActionsBinding? = null
@@ -26,13 +25,16 @@ class BottomActionFragment : BottomSheetDialogFragment() {
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
-        savedInstanceState: Bundle?
+        savedInstanceState: Bundle?,
     ): View {
         _binding = FragmentBottomActionsBinding.inflate(layoutInflater)
         return binding.root
     }
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+    override fun onViewCreated(
+        view: View,
+        savedInstanceState: Bundle?,
+    ) {
         super.onViewCreated(view, savedInstanceState)
         when (arguments?.getString("action")) {
             BottomAction.DELETE.name -> {
@@ -45,11 +47,11 @@ class BottomActionFragment : BottomSheetDialogFragment() {
 
         binding.nvBottomActions.setNavigationItemSelectedListener {
             when (it.itemId) {
-                //Delete
+                // Delete
                 R.id.action_delete_only_completed_tasks -> deleteOnlyCompletedDialog()
                 R.id.action_delete_overcompleted_tasks -> deleteOvercompletedDialog()
 
-                //Sort
+                // Sort
                 R.id.sort_by_title -> viewModel.onSortOrderSelected(SortOrder.BY_TITLE)
                 R.id.sort_by_date_created -> viewModel.onSortOrderSelected(SortOrder.BY_DATE)
                 R.id.sort_by_date_completed -> viewModel.onSortOrderSelected(SortOrder.BY_COMPLETE)
@@ -86,13 +88,12 @@ class BottomActionFragment : BottomSheetDialogFragment() {
                 Toast.makeText(
                     requireContext(),
                     resources.getString(R.string.overcompleted_deleted),
-                    Toast.LENGTH_SHORT
+                    Toast.LENGTH_SHORT,
                 ).show()
                 dialog.dismiss()
             }
             .setNegativeButton(R.string.cancel) { dialog, _ -> dialog.cancel() }
             .show()
-
 
     private fun deleteOnlyCompletedDialog(): AlertDialog =
         MaterialAlertDialogBuilder(requireContext())
@@ -103,7 +104,7 @@ class BottomActionFragment : BottomSheetDialogFragment() {
                 Toast.makeText(
                     requireContext(),
                     resources.getString(R.string.completed_deleted),
-                    Toast.LENGTH_SHORT
+                    Toast.LENGTH_SHORT,
                 ).show()
                 dialog.dismiss()
             }

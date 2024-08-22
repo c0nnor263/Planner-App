@@ -6,7 +6,7 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
-import com.conboi.plannerapp.utils.APP_PREFERENCES
+import com.conboi.core.domain.APP_PREFERENCES
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
@@ -26,68 +26,80 @@ data class FilterAppPreferences(
 )
 
 @Singleton
-class AppPreferencesDataStore @Inject constructor(@ApplicationContext context: Context) {
+class AppPreferencesDataStore
+@Inject
+constructor(
+    @ApplicationContext context: Context,
+) {
     private val dataStore = context.appPreferences
-    val preferencesFlow = dataStore.data
-        .catch { exception ->
-            if (exception is IOException) {
-                emit(emptyPreferences())
-            } else {
-                throw exception
+    val preferencesFlow =
+        dataStore.data
+            .catch { exception ->
+                if (exception is IOException) {
+                    emit(emptyPreferences())
+                } else {
+                    throw exception
+                }
+            }.map { preferences ->
+                val lastUserId = preferences[AppPreferencesKeys.LAST_USER_ID] ?: ""
+
+                val isImportConfirmed = preferences[AppPreferencesKeys.IS_IMPORT_CONFIRMED] ?: false
+
+                val isImportDownloaded =
+                    preferences[AppPreferencesKeys.IS_IMPORT_DOWNLOADED] ?: false
+
+                val isFirstLaunch = preferences[AppPreferencesKeys.IS_FIRST_LAUNCH] ?: false
+
+                val isEmailConfirmShowed =
+                    preferences[AppPreferencesKeys.IS_EMAIL_CONFIRM_SHOWED] ?: false
+
+                val isResubscribeShowed =
+                    preferences[AppPreferencesKeys.IS_RESUBSCRIBE_SHOWED] ?: false
+
+                FilterAppPreferences(
+                    lastUserId,
+                    isImportConfirmed,
+                    isImportDownloaded,
+                    isFirstLaunch,
+                    isEmailConfirmShowed,
+                    isResubscribeShowed,
+                )
             }
-        }.map { preferences ->
-            val lastUserId = preferences[AppPreferencesKeys.LAST_USER_ID] ?: ""
 
-            val isImportConfirmed = preferences[AppPreferencesKeys.IS_IMPORT_CONFIRMED] ?: false
-
-            val isImportDownloaded = preferences[AppPreferencesKeys.IS_IMPORT_DOWNLOADED] ?: false
-
-            val isFirstLaunch = preferences[AppPreferencesKeys.IS_FIRST_LAUNCH] ?: false
-
-            val isEmailConfirmShowed =
-                preferences[AppPreferencesKeys.IS_EMAIL_CONFIRM_SHOWED] ?: false
-
-            val isResubscribeShowed =
-                preferences[AppPreferencesKeys.IS_RESUBSCRIBE_SHOWED] ?: false
-
-            FilterAppPreferences(
-                lastUserId,
-                isImportConfirmed,
-                isImportDownloaded,
-                isFirstLaunch,
-                isEmailConfirmShowed,
-                isResubscribeShowed
-            )
+    suspend fun updateLastUserId(lastUserId: String) =
+        dataStore.edit { preferences ->
+            preferences[AppPreferencesKeys.LAST_USER_ID] = lastUserId
         }
 
-    suspend fun updateLastUserId(lastUserId: String) = dataStore.edit { preferences ->
-        preferences[AppPreferencesKeys.LAST_USER_ID] = lastUserId
-    }
+    suspend fun updateEmailConfirmShowed(state: Boolean) =
+        dataStore.edit { preferences ->
+            preferences[AppPreferencesKeys.IS_EMAIL_CONFIRM_SHOWED] = state
+        }
 
-    suspend fun updateEmailConfirmShowed(state: Boolean) = dataStore.edit { preferences ->
-        preferences[AppPreferencesKeys.IS_EMAIL_CONFIRM_SHOWED] = state
-    }
+    suspend fun updateImportDownloaded(state: Boolean) =
+        dataStore.edit { preferences ->
+            preferences[AppPreferencesKeys.IS_IMPORT_DOWNLOADED] = state
+        }
 
-    suspend fun updateImportDownloaded(state: Boolean) = dataStore.edit { preferences ->
-        preferences[AppPreferencesKeys.IS_IMPORT_DOWNLOADED] = state
-    }
+    suspend fun updateImportConfirmed(state: Boolean) =
+        dataStore.edit { preferences ->
+            preferences[AppPreferencesKeys.IS_IMPORT_CONFIRMED] = state
+        }
 
-    suspend fun updateImportConfirmed(state: Boolean) = dataStore.edit { preferences ->
-        preferences[AppPreferencesKeys.IS_IMPORT_CONFIRMED] = state
-    }
+    suspend fun updateFirstLaunch(state: Boolean) =
+        dataStore.edit { preferences ->
+            preferences[AppPreferencesKeys.IS_FIRST_LAUNCH] = state
+        }
 
-    suspend fun updateFirstLaunch(state: Boolean) = dataStore.edit { preferences ->
-        preferences[AppPreferencesKeys.IS_FIRST_LAUNCH] = state
-    }
+    suspend fun updateResubscribeShowed(state: Boolean) =
+        dataStore.edit { preferences ->
+            preferences[AppPreferencesKeys.IS_RESUBSCRIBE_SHOWED] = state
+        }
 
-    suspend fun updateResubscribeShowed(state: Boolean) = dataStore.edit { preferences ->
-        preferences[AppPreferencesKeys.IS_RESUBSCRIBE_SHOWED] = state
-    }
-
-
-    suspend fun clear() = dataStore.edit { preferences ->
-        preferences.clear()
-    }
+    suspend fun clear() =
+        dataStore.edit { preferences ->
+            preferences.clear()
+        }
 
     object AppPreferencesKeys {
         val LAST_USER_ID = stringPreferencesKey("LAST_USER_ID")

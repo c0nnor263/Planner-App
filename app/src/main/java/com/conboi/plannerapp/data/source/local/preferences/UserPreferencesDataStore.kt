@@ -1,17 +1,21 @@
 package com.conboi.plannerapp.data.source.local.preferences
 
 import android.content.Context
-import androidx.datastore.preferences.core.*
+import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.emptyPreferences
+import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
-import com.conboi.plannerapp.utils.SortOrder
-import com.conboi.plannerapp.utils.USER_PREFERENCES
+import com.conboi.core.domain.USER_PREFERENCES
+import com.conboi.core.domain.enums.SortOrder
 import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.map
 import java.io.IOException
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 
 val Context.userPreferences by preferencesDataStore(name = USER_PREFERENCES)
 
@@ -20,40 +24,47 @@ data class FilterUserPreferences(
     val rateUsCount: Int,
     val sortOrder: SortOrder,
     val isHideCompleted: Boolean,
-    val isHideOvercompleted: Boolean
+    val isHideOvercompleted: Boolean,
 )
 
 @Singleton
-class UserPreferencesDataStore @Inject constructor(@ApplicationContext context: Context) {
+class UserPreferencesDataStore
+@Inject
+constructor(
+    @ApplicationContext context: Context,
+) {
     private val dataStore = context.userPreferences
-    val preferencesFlow = dataStore.data
-        .catch { exception ->
-            if (exception is IOException) {
-                emit(emptyPreferences())
-            } else {
-                throw exception
+    val preferencesFlow =
+        dataStore.data
+            .catch { exception ->
+                if (exception is IOException) {
+                    emit(emptyPreferences())
+                } else {
+                    throw exception
+                }
             }
-        }
-        .map { preferences ->
-            val totalCompleted = preferences[UserPreferencesKeys.TOTAL_COMPLETED] ?: 0
+            .map { preferences ->
+                val totalCompleted = preferences[UserPreferencesKeys.TOTAL_COMPLETED] ?: 0
 
-            val rateUsCount = preferences[UserPreferencesKeys.RATE_US_COUNT] ?: 0
+                val rateUsCount = preferences[UserPreferencesKeys.RATE_US_COUNT] ?: 0
 
-            val sortOrder = SortOrder.valueOf(
-                preferences[UserPreferencesKeys.SORT_ORDER] ?: SortOrder.BY_DATE.name
-            )
-            val isHideCompleted = preferences[UserPreferencesKeys.IS_HIDE_COMPLETED] ?: false
+                val sortOrder =
+                    SortOrder.valueOf(
+                        preferences[UserPreferencesKeys.SORT_ORDER] ?: SortOrder.BY_DATE.name,
+                    )
+                val isHideCompleted = preferences[UserPreferencesKeys.IS_HIDE_COMPLETED] ?: false
 
-            val isHideOverCompleted = preferences[UserPreferencesKeys.IS_HIDE_OVERCOMPLETED] ?: false
+                val isHideOverCompleted =
+                    preferences[UserPreferencesKeys.IS_HIDE_OVERCOMPLETED] ?: false
 
-            FilterUserPreferences(
-                totalCompleted,
-                rateUsCount,
-                sortOrder,
-                isHideCompleted,
-                isHideOverCompleted
-            )
-        }
+                FilterUserPreferences(
+                    totalCompleted,
+                    rateUsCount,
+                    sortOrder,
+                    isHideCompleted,
+                    isHideOverCompleted,
+                )
+            }
 
     // Total completed
     suspend fun updateTotalCompleted(totalCompleted: Int) =

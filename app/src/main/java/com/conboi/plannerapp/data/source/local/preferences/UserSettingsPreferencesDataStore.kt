@@ -5,14 +5,13 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.preferencesDataStore
-import com.conboi.plannerapp.utils.USER_SETTINGS_PREFERENCES
+import com.conboi.core.domain.USER_SETTINGS_PREFERENCES
 import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.map
 import java.io.IOException
 import javax.inject.Inject
 import javax.inject.Singleton
-
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.map
 
 val Context.userSettingsPreferences by preferencesDataStore(name = USER_SETTINGS_PREFERENCES)
 
@@ -20,41 +19,46 @@ data class FilterUserSettingsPreferences(
     val privateState: Boolean,
     val vibrationState: Boolean,
     val reminderState: Boolean,
-    val notificationState: Boolean
+    val notificationState: Boolean,
 )
 
 @Singleton
-class UserSettingsPreferencesDataStore @Inject constructor(@ApplicationContext context: Context) {
+class UserSettingsPreferencesDataStore
+@Inject
+constructor(
+    @ApplicationContext context: Context,
+) {
     private val dataStore = context.userSettingsPreferences
-    val preferencesFlow = dataStore.data
-        .catch { exception ->
-            if (exception is IOException) {
-                emit(emptyPreferences())
-            } else {
-                throw exception
+    val preferencesFlow =
+        dataStore.data
+            .catch { exception ->
+                if (exception is IOException) {
+                    emit(emptyPreferences())
+                } else {
+                    throw exception
+                }
             }
-        }
-        .map { preferences ->
+            .map { preferences ->
 
-            val privateModeState =
-                preferences[UserSettingsPreferencesKeys.PRIVATE_MODE] ?: false
+                val privateModeState =
+                    preferences[UserSettingsPreferencesKeys.PRIVATE_MODE] ?: false
 
-            val vibrationModeState =
-                preferences[UserSettingsPreferencesKeys.VIBRATION_MODE] ?: true
+                val vibrationModeState =
+                    preferences[UserSettingsPreferencesKeys.VIBRATION_MODE] ?: true
 
-            val reminderModeState =
-                preferences[UserSettingsPreferencesKeys.REMINDER_MODE] ?: true
+                val reminderModeState =
+                    preferences[UserSettingsPreferencesKeys.REMINDER_MODE] ?: true
 
-            val notificationModeState =
-                preferences[UserSettingsPreferencesKeys.NOTIFICATION_MODE] ?: true
+                val notificationModeState =
+                    preferences[UserSettingsPreferencesKeys.NOTIFICATION_MODE] ?: true
 
-            FilterUserSettingsPreferences(
-                privateModeState,
-                vibrationModeState,
-                reminderModeState,
-                notificationModeState
-            )
-        }
+                FilterUserSettingsPreferences(
+                    privateModeState,
+                    vibrationModeState,
+                    reminderModeState,
+                    notificationModeState,
+                )
+            }
 
     suspend fun updatePrivateState(privateState: Boolean) =
         dataStore.edit { preferences ->

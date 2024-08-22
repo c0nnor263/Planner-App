@@ -2,23 +2,25 @@ package com.conboi.plannerapp.data.source.local.repo
 
 import android.content.Context
 import androidx.lifecycle.asLiveData
-import com.conboi.plannerapp.data.model.TaskType
+import com.conboi.core.data.model.TaskType
+import com.conboi.core.domain.FirebaseResult
+import com.conboi.core.domain.enums.PremiumType
+import com.conboi.core.domain.enums.SynchronizationState
 import com.conboi.plannerapp.data.source.local.preferences.PremiumPreferencesDataStore
 import com.conboi.plannerapp.data.source.local.preferences.UserPreferencesDataStore
 import com.conboi.plannerapp.data.source.remote.repo.FirebaseRepository
-import com.conboi.plannerapp.utils.PremiumType
-import com.conboi.plannerapp.utils.SynchronizationState
-import com.conboi.plannerapp.utils.shared.firebase.FirebaseResult
 import dagger.Module
 import dagger.hilt.InstallIn
 import dagger.hilt.android.components.ActivityRetainedComponent
+import javax.inject.Inject
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
-import javax.inject.Inject
 
 @Module
 @InstallIn(ActivityRetainedComponent::class)
-class UserRepository @Inject constructor(
+class UserRepository
+@Inject
+constructor(
     private val userPreferencesDataStore: UserPreferencesDataStore,
     private val premiumPreferencesDataStore: PremiumPreferencesDataStore,
     private val taskRepository: TaskRepository,
@@ -36,13 +38,11 @@ class UserRepository @Inject constructor(
     suspend fun decrementTotalCompleted(differ: Int) =
         userPreferencesDataStore.decrementTotalCompleted(differ)
 
-
     suspend fun increaseRateUs() = userPreferencesDataStore.increaseRateUs()
 
     suspend fun resetRateUs() = userPreferencesDataStore.updateRateUs(0)
 
     suspend fun neverShowRateUs() = userPreferencesDataStore.updateRateUs(16)
-
 
     fun getHideCompleted() =
         combine(userPreferencesFlow) { it.first().isHideCompleted }.asLiveData()
@@ -59,7 +59,6 @@ class UserRepository @Inject constructor(
 
     fun getPremiumType() = combine(premiumPreferencesFlow) { it.first().premiumType }.asLiveData()
 
-
     fun getSyncState() = combine(premiumPreferencesFlow) { it.first().syncState }.asLiveData()
 
     suspend fun getTotalCompletedValue() = userPreferencesFlow.first().totalCompleted
@@ -67,9 +66,7 @@ class UserRepository @Inject constructor(
     fun getTotalCompleted() =
         combine(userPreferencesFlow) { it.first().totalCompleted }.asLiveData()
 
-    suspend fun getRateUsCount() =
-        combine(userPreferencesFlow) { it.first().rateUsCount }.first()
-
+    suspend fun getRateUsCount() = combine(userPreferencesFlow) { it.first().rateUsCount }.first()
 
     private suspend fun downloadTotalCompleted() {
         if (getTotalCompletedValue() == 0) {
@@ -85,19 +82,21 @@ class UserRepository @Inject constructor(
                 PremiumType.MONTH.name -> {
                     PremiumType.MONTH
                 }
+
                 PremiumType.SIX_MONTH.name -> {
                     PremiumType.SIX_MONTH
                 }
+
                 PremiumType.YEAR.name -> {
                     PremiumType.YEAR
                 }
+
                 else -> {
                     return
                 }
-            }
+            },
         )
     }
-
 
     // User actions
     fun reloadUser() {
@@ -132,14 +131,17 @@ class UserRepository @Inject constructor(
         premiumPreferencesDataStore.clear()
     }
 
-    suspend fun reauthenticate(currentPassword: String, callback: (Any?, Exception?) -> Unit) {
+    suspend fun reauthenticate(
+        currentPassword: String,
+        callback: (Any?, Exception?) -> Unit,
+    ) {
         val result = firebaseRepository.reauthenticate(currentPassword)
         callbackHandling(result, callback)
     }
 
     suspend fun signOutUploadTasks(
         currentList: List<TaskType>,
-        callback: (Any?, Exception?) -> Unit
+        callback: (Any?, Exception?) -> Unit,
     ) {
         val result = firebaseRepository.uploadTasks(currentList, false, withBackupUpload = false)
         callbackHandling(result, callback)
@@ -155,19 +157,24 @@ class UserRepository @Inject constructor(
         callbackHandling(result, callback)
     }
 
-
     // User updates
     suspend fun updateUserName(newName: String) = firebaseRepository.updateUserProfileName(newName)
 
     suspend fun updateUser(userInfo: MutableMap<String, Any>) =
         firebaseRepository.updateUser(userInfo)
 
-    suspend fun updatePassword(newPassword: String, callback: (Any?, Exception?) -> Unit) {
+    suspend fun updatePassword(
+        newPassword: String,
+        callback: (Any?, Exception?) -> Unit,
+    ) {
         val result = firebaseRepository.updatePassword(newPassword)
         callbackHandling(result, callback)
     }
 
-    suspend fun verifyBeforeUpdateEmail(newEmail: String, callback: (Any?, Exception?) -> Unit) {
+    suspend fun verifyBeforeUpdateEmail(
+        newEmail: String,
+        callback: (Any?, Exception?) -> Unit,
+    ) {
         val result = firebaseRepository.verifyBeforeUpdateEmail(newEmail)
         callbackHandling(result, callback)
     }
@@ -202,7 +209,6 @@ class UserRepository @Inject constructor(
 
     private fun callbackHandling(
         result: FirebaseResult<Any?>,
-        callback: (Any?, Exception?) -> Unit
-    ) =
-        if (result.error == null) callback(null, null) else callback(null, result.error)
+        callback: (Any?, Exception?) -> Unit,
+    ) = if (result.error == null) callback(null, null) else callback(null, result.error)
 }

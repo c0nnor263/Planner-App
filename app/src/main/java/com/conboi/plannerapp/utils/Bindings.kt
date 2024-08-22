@@ -12,13 +12,16 @@ import androidx.core.view.updateLayoutParams
 import androidx.databinding.BindingAdapter
 import coil.load
 import coil.transform.CircleCropTransformation
-import com.conboi.plannerapp.R
+import com.conboi.core.domain.GLOBAL_START_DATE
+import com.conboi.core.domain.R
+import com.conboi.core.domain.enums.InsetSide
+import com.conboi.core.domain.enums.Priority
+import com.conboi.core.domain.enums.RepeatMode
 import com.google.android.material.textfield.MaterialAutoCompleteTextView
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textview.MaterialTextView
 import java.text.DateFormat
 import java.util.*
-
 
 @BindingAdapter("tietSetTaskTime")
 fun TextInputEditText.tietSetTaskTime(time: Long) {
@@ -27,8 +30,8 @@ fun TextInputEditText.tietSetTaskTime(time: Long) {
         setText(
             DateFormat.getTimeInstance(DateFormat.DEFAULT, defaultLocale)
                 .format(
-                    Date(time)
-                )
+                    Date(time),
+                ),
         )
     }
 }
@@ -40,8 +43,8 @@ fun TextInputEditText.tietSetTaskDate(time: Long) {
         setText(
             DateFormat.getDateInstance(DateFormat.DEFAULT, defaultLocale)
                 .format(
-                    Date(time)
-                )
+                    Date(time),
+                ),
         )
     }
 }
@@ -54,40 +57,40 @@ fun TextInputEditText.tietSetFullTaskTime(time: Long) {
             DateFormat.getDateTimeInstance(
                 DateFormat.DEFAULT,
                 DateFormat.DEFAULT,
-                defaultLocale
+                defaultLocale,
             ).format(
-                Date(time)
-            )
+                Date(time),
+            ),
         )
     }
 }
 
-
 @BindingAdapter("mTvSetTextCompleted")
 fun MaterialTextView.mTvSetTextCompleted(completed: Long) {
     val defaultLocale = resources.configuration.locales[0]
-    text = resources.getString(
-        R.string.task_completed,
-        DateFormat.getDateTimeInstance(
-            DateFormat.DEFAULT,
-            DateFormat.DEFAULT,
-            defaultLocale
-        ).format(completed)
-    )
+    text =
+        resources.getString(
+            R.string.task_completed,
+            DateFormat.getDateTimeInstance(
+                DateFormat.DEFAULT,
+                DateFormat.DEFAULT,
+                defaultLocale,
+            ).format(completed),
+        )
 }
-
 
 @BindingAdapter("mTvSetTextCreated")
 fun MaterialTextView.mTvSetTextCreated(created: Long) {
     val defaultLocale = resources.configuration.locales[0]
-    text = resources.getString(
-        R.string.task_created,
-        DateFormat.getDateTimeInstance(
-            DateFormat.DEFAULT,
-            DateFormat.DEFAULT,
-            defaultLocale
-        ).format(created)
-    )
+    text =
+        resources.getString(
+            R.string.task_created,
+            DateFormat.getDateTimeInstance(
+                DateFormat.DEFAULT,
+                DateFormat.DEFAULT,
+                defaultLocale,
+            ).format(created),
+        )
 }
 
 @BindingAdapter("mActvSetPriority")
@@ -100,59 +103,65 @@ fun MaterialAutoCompleteTextView.mActvSetPriority(priority: Priority?) {
             setTextColor(
                 ContextCompat.getColor(
                     context,
-                    R.color.primaryDarkColorAir
-                )
+                    R.color.primaryDarkColorAir,
+                ),
             )
         }
+
         Priority.DEFAULT -> {
             setText(items[1])
             setTextColor(
                 ContextCompat.getColor(
                     context,
-                    R.color.secondaryColorWater
-                )
+                    R.color.secondaryColorWater,
+                ),
             )
         }
+
         Priority.ADVISABLE -> {
             setText(items[2])
             setTextColor(
                 ContextCompat.getColor(
                     context,
-                    R.color.primaryLightColorFire
-                )
+                    R.color.primaryLightColorFire,
+                ),
             )
         }
+
         Priority.IMPORTANT -> {
             setText(items[3])
             setTextColor(ContextCompat.getColor(context, R.color.secondaryDarkColorFire))
         }
+
         else -> {
             setText(items[1])
             setTextColor(
                 ContextCompat.getColor(
                     context,
-                    R.color.secondaryColorWater
-                )
+                    R.color.secondaryColorWater,
+                ),
             )
         }
     }
 
-    val adapter = ArrayAdapter(
-        context,
-        R.layout.dropmenu_priority,
-        items
-    )
+    val adapter =
+        ArrayAdapter(
+            context,
+            com.conboi.core.ui.R.layout.dropmenu_priority,
+            items,
+        )
     setAdapter(adapter)
 }
 
 @BindingAdapter("mTvSetTotal")
 fun MaterialTextView.mTvSetTotal(total: Int) {
     if (total > 1) {
-        text = if (total < 100) {
-            total.toString()
-        } else {
-            resources.getString(R.string.max_total_check, 99)
-        }
+        text =
+            if (total < 100) {
+                total.toString()
+            } else {
+                resources.getString(R.string.max_total_check, 99)
+            }
         visibility = View.VISIBLE
     } else {
         visibility = View.GONE
@@ -165,7 +174,7 @@ fun MaterialTextView.mTvSetTotal(total: Int) {
     "clTitle",
     "clTotal",
     "clMissed",
-    requireAll = true
+    requireAll = true,
 )
 fun ConstraintLayout.clTask(
     priority: Priority?,
@@ -177,12 +186,12 @@ fun ConstraintLayout.clTask(
     fun setPriorityColor(priority: Priority?) {
         setBackgroundResource(
             when (priority) {
-                Priority.LEISURELY -> R.drawable.gradient_priority_leisurely
-                Priority.DEFAULT -> R.drawable.gradient_priority_default
-                Priority.ADVISABLE -> R.drawable.gradient_priority_advisable
-                Priority.IMPORTANT -> R.drawable.gradient_priority_important
-                else -> R.drawable.gradient_priority_default
-            }
+                Priority.LEISURELY -> com.conboi.core.ui.R.drawable.gradient_priority_leisurely
+                Priority.DEFAULT -> com.conboi.core.ui.R.drawable.gradient_priority_default
+                Priority.ADVISABLE -> com.conboi.core.ui.R.drawable.gradient_priority_advisable
+                Priority.IMPORTANT -> com.conboi.core.ui.R.drawable.gradient_priority_important
+                else -> com.conboi.core.ui.R.drawable.gradient_priority_default
+            },
         )
     }
 
@@ -211,7 +220,6 @@ fun ConstraintLayout.clTask(
     }
 }
 
-
 @BindingAdapter("mActvSetRepeatMode")
 fun MaterialAutoCompleteTextView.mActvSetRepeatMode(repeatMode: RepeatMode?) {
     val items = resources.getStringArray(R.array.repeat_modes)
@@ -221,16 +229,19 @@ fun MaterialAutoCompleteTextView.mActvSetRepeatMode(repeatMode: RepeatMode?) {
             RepeatMode.Daily -> items[1]
             RepeatMode.Weekly -> items[2]
             else -> items[0]
-        }
+        },
     )
 
-    val adapter = ArrayAdapter(context, R.layout.dropmenu_repeat_modes, items)
+    val adapter = ArrayAdapter(context, com.conboi.core.ui.R.layout.dropmenu_repeat_modes, items)
     setAdapter(adapter)
 }
 
-
 @BindingAdapter("setTextTaskChecked", "setTextTaskTotal")
-fun setCheckedTotal(view: View, checked: Boolean, total: Int) {
+fun setCheckedTotal(
+    view: View,
+    checked: Boolean,
+    total: Int,
+) {
     when (view) {
         is TextInputEditText -> {
             view.apply {
@@ -249,41 +260,41 @@ fun setCheckedTotal(view: View, checked: Boolean, total: Int) {
                     }
             }
         }
+
         is MaterialTextView -> {
             view.apply {
-                paint.isStrikeThruText = if (checked) {
-                    if (total > 1) {
+                paint.isStrikeThruText =
+                    if (checked) {
+                        if (total > 1) {
+                            isEnabled = true
+                            false
+                        } else {
+                            isEnabled = false
+                            true
+                        }
+                    } else {
                         isEnabled = true
                         false
-                    } else {
-                        isEnabled = false
-                        true
                     }
-
-                } else {
-                    isEnabled = true
-                    false
-                }
             }
         }
     }
 }
 
-
 @BindingAdapter("mTvSetFriendAdded")
 fun MaterialTextView.mTvSetFriendAdded(addedTime: Long) {
     val defaultLocale = resources.configuration.locales[0]
-    text = resources.getString(
-        R.string.added_friend_time,
-        DateFormat.getDateInstance(DateFormat.DEFAULT, defaultLocale).format(
-            Date(addedTime)
+    text =
+        resources.getString(
+            R.string.added_friend_time,
+            DateFormat.getDateInstance(DateFormat.DEFAULT, defaultLocale).format(
+                Date(addedTime),
+            ),
         )
-    )
 }
 
 @BindingAdapter("ivSetFriendRequestStatus")
 fun ImageView.ivSetFriendRequestStatus(requestCode: Int) {
-
     fun loadImage(imageResource: Int) {
         visibility = View.VISIBLE
         load(imageResource) {
@@ -292,29 +303,31 @@ fun ImageView.ivSetFriendRequestStatus(requestCode: Int) {
     }
 
     when (requestCode) {
-        0 -> loadImage(R.drawable.ic_baseline_pending_24)
+        0 -> loadImage(com.conboi.core.ui.R.drawable.ic_baseline_pending_24)
         1 -> visibility = View.INVISIBLE
-        2 -> loadImage(R.drawable.ic_baseline_help_24)
-        3 -> loadImage(R.drawable.ic_baseline_cancel_24)
+        2 -> loadImage(com.conboi.core.ui.R.drawable.ic_baseline_help_24)
+        3 -> loadImage(com.conboi.core.ui.R.drawable.ic_baseline_cancel_24)
     }
 }
-
 
 @BindingAdapter("ivLoadProfileImage")
 fun ImageView.ivLoadProfileImage(url: String?) {
     if (url?.isNotBlank() == true) {
         load(url) {
-            error(R.drawable.ic_baseline_account_circle_24)
+            error(com.conboi.core.ui.R.drawable.ic_baseline_account_circle_24)
             transformations(CircleCropTransformation())
         }
     } else {
-        setImageResource(R.drawable.ic_baseline_account_circle_24)
+        setImageResource(com.conboi.core.ui.R.drawable.ic_baseline_account_circle_24)
     }
 }
 
 @Suppress("DEPRECATION")
 @BindingAdapter("layoutFullscreen")
-fun View.bindLayoutFullscreen(previousFullscreen: Boolean, fullscreen: Boolean) {
+fun View.bindLayoutFullscreen(
+    previousFullscreen: Boolean,
+    fullscreen: Boolean,
+) {
     if (previousFullscreen != fullscreen && fullscreen) {
         systemUiVisibility = View.SYSTEM_UI_FLAG_LAYOUT_STABLE or
                 View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN or
@@ -327,7 +340,7 @@ fun View.bindLayoutFullscreen(previousFullscreen: Boolean, fullscreen: Boolean) 
     "paddingTopSystemWindowInsets",
     "paddingRightSystemWindowInsets",
     "paddingBottomSystemWindowInsets",
-    requireAll = false
+    requireAll = false,
 )
 fun View.applySystemWindowInsetsPadding(
     previousApplyLeft: Boolean,
@@ -337,7 +350,7 @@ fun View.applySystemWindowInsetsPadding(
     applyLeft: Boolean,
     applyTop: Boolean,
     applyRight: Boolean,
-    applyBottom: Boolean
+    applyBottom: Boolean,
 ) {
     if (previousApplyLeft == applyLeft &&
         previousApplyTop == applyTop &&
@@ -357,7 +370,7 @@ fun View.applySystemWindowInsetsPadding(
             padding.left + left,
             padding.top + top,
             padding.right + right,
-            padding.bottom + bottom
+            padding.bottom + bottom,
         )
     }
 }
@@ -367,7 +380,7 @@ fun View.applySystemWindowInsetsPadding(
     "marginTopSystemWindowInsets",
     "marginRightSystemWindowInsets",
     "marginBottomSystemWindowInsets",
-    requireAll = false
+    requireAll = false,
 )
 fun View.applySystemWindowInsetsMargin(
     previousApplyLeft: Boolean,
@@ -377,7 +390,7 @@ fun View.applySystemWindowInsetsMargin(
     applyLeft: Boolean,
     applyTop: Boolean,
     applyRight: Boolean,
-    applyBottom: Boolean
+    applyBottom: Boolean,
 ) {
     if (previousApplyLeft == applyLeft &&
         previousApplyTop == applyTop &&
@@ -402,9 +415,7 @@ fun View.applySystemWindowInsetsMargin(
     }
 }
 
-fun View.doOnApplyWindowInsets(
-    block: (View, WindowInsets, InitialPadding, InitialMargin, Int) -> Unit
-) {
+fun View.doOnApplyWindowInsets(block: (View, WindowInsets, InitialPadding, InitialMargin, Int) -> Unit) {
     // Create a snapshot of the view's padding & margin states
     val initialPadding = recordInitialPaddingForView(this)
     val initialMargin = recordInitialMarginForView(this)
@@ -427,24 +438,31 @@ fun View.requestApplyInsetsWhenAttached() {
     } else {
         // We're not attached to the hierarchy, add a listener to
         // request when we are
-        addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
-            override fun onViewAttachedToWindow(v: View) {
-                v.removeOnAttachStateChangeListener(this)
-                v.requestApplyInsets()
-            }
+        addOnAttachStateChangeListener(
+            object : View.OnAttachStateChangeListener {
+                override fun onViewAttachedToWindow(v: View) {
+                    v.removeOnAttachStateChangeListener(this)
+                    v.requestApplyInsets()
+                }
 
-            override fun onViewDetachedFromWindow(v: View) = Unit
-        })
+                override fun onViewDetachedFromWindow(v: View) = Unit
+            },
+        )
     }
 }
 
-private fun recordInitialPaddingForView(view: View) = InitialPadding(
-    view.paddingLeft, view.paddingTop, view.paddingRight, view.paddingBottom
-)
+private fun recordInitialPaddingForView(view: View) =
+    InitialPadding(
+        view.paddingLeft,
+        view.paddingTop,
+        view.paddingRight,
+        view.paddingBottom,
+    )
 
 private fun recordInitialMarginForView(view: View): InitialMargin {
-    val lp = view.layoutParams as? ViewGroup.MarginLayoutParams
-        ?: throw IllegalArgumentException("Invalid view layout params")
+    val lp =
+        view.layoutParams as? ViewGroup.MarginLayoutParams
+            ?: throw IllegalArgumentException("Invalid view layout params")
     return InitialMargin(lp.leftMargin, lp.topMargin, lp.rightMargin, lp.bottomMargin)
 }
 
@@ -453,7 +471,11 @@ private fun recordInitialHeightForView(view: View): Int {
 }
 
 @Suppress("DEPRECATION")
-private fun getInsetsToSide(side: InsetSide, applySide: Boolean, insets: WindowInsets): Int {
+private fun getInsetsToSide(
+    side: InsetSide,
+    applySide: Boolean,
+    insets: WindowInsets,
+): Int {
     return if (applySide) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             when (side) {
@@ -470,7 +492,9 @@ private fun getInsetsToSide(side: InsetSide, applySide: Boolean, insets: WindowI
                 InsetSide.BOTTOM -> insets.systemWindowInsetBottom
             }
         }
-    } else 0
+    } else {
+        0
+    }
 }
 
 class InitialPadding(val left: Int, val top: Int, val right: Int, val bottom: Int)

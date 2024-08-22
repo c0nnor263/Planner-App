@@ -12,7 +12,7 @@ class NoPreAnGridLayoutManager(
     context: Context?,
     spanCount: Int,
     orientation: Int,
-    reverseLayout: Boolean
+    reverseLayout: Boolean,
 ) : GridLayoutManager(context, spanCount, orientation, reverseLayout) {
     override fun supportsPredictiveItemAnimations(): Boolean {
         return false

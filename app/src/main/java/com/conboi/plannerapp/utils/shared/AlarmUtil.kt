@@ -10,8 +10,13 @@ import android.content.pm.PackageManager
 import androidx.core.content.ContextCompat
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
+import com.conboi.core.data.getTimeFromString
+import com.conboi.core.data.getUniqueRequestCode
+import com.conboi.core.data.model.TaskType
+import com.conboi.core.domain.GLOBAL_START_DATE
+import com.conboi.core.domain.enums.AlarmType
+import com.conboi.core.domain.enums.NotificationType
 import com.conboi.plannerapp.data.dao.TaskDao
-import com.conboi.plannerapp.data.model.TaskType
 import com.conboi.plannerapp.data.source.local.preferences.ALARM_IS_NOT_EMPTY
 import com.conboi.plannerapp.data.source.local.preferences.AlarmPreferencesDataStore
 import com.conboi.plannerapp.di.AppApplicationScope
@@ -31,25 +36,27 @@ import javax.inject.Singleton
 const val NOTIFICATION_CODE = "NotifyCode"
 
 @Singleton
-class AlarmUtil @Inject constructor(
+class AlarmUtil
+@Inject
+constructor(
     private val taskDao: TaskDao,
     private val alarmPreferencesDataStore: AlarmPreferencesDataStore,
     @AppApplicationScope private val applicationScope: CoroutineScope,
     @IODispatcher private val ioDispatcher: CoroutineDispatcher,
 ) {
-
     fun setReminder(
         context: Context,
         idTask: Int,
         repeatMode: RepeatMode,
-        reminderTime: Long
+        reminderTime: Long,
     ) {
         var time = reminderTime
 
         if (reminderTime < System.currentTimeMillis()) {
-            val oldTime = Calendar.getInstance().apply {
-                timeInMillis = reminderTime
-            }
+            val oldTime =
+                Calendar.getInstance().apply {
+                    timeInMillis = reminderTime
+                }
             val currentTime = Calendar.getInstance()
 
             val oldDayWeek = oldTime[Calendar.DAY_OF_WEEK]
@@ -58,7 +65,6 @@ class AlarmUtil @Inject constructor(
             val currentDayWeek = currentTime[Calendar.DAY_OF_WEEK]
             val currentHour = currentTime[Calendar.HOUR_OF_DAY]
 
-
             when (repeatMode) {
                 RepeatMode.Once -> return
                 RepeatMode.Daily -> {
@@ -66,6 +72,7 @@ class AlarmUtil @Inject constructor(
                         currentTime.add(Calendar.DATE, 1)
                     }
                 }
+
                 RepeatMode.Weekly -> {
                     if (oldDayWeek >= currentDayWeek) {
                         currentTime.add(Calendar.DATE, oldDayWeek - currentDayWeek)
@@ -79,22 +86,23 @@ class AlarmUtil @Inject constructor(
             time = currentTime.timeInMillis
         }
 
-        val pendingIntent = Intent(context, AlarmServiceReceiver::class.java).let {
-            PendingIntent.getBroadcast(
-                context,
-                getUniqueRequestCode(AlarmType.REMINDER, idTask),
-                it.apply {
-                    putExtra(TaskType.COLUMN_ID, idTask)
-                    putExtra(NOTIFICATION_CODE, NotificationType.REMINDER.name)
-                },
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-            )
-        }
+        val pendingIntent =
+            Intent(context, AlarmServiceReceiver::class.java).let {
+                PendingIntent.getBroadcast(
+                    context,
+                    getUniqueRequestCode(AlarmType.REMINDER, idTask),
+                    it.apply {
+                        putExtra(TaskType.COLUMN_ID, idTask)
+                        putExtra(NOTIFICATION_CODE, NotificationType.REMINDER.name)
+                    },
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+                )
+            }
         val alarmManager = context.getSystemService(AlarmManager::class.java)
         alarmManager?.setExact(
             AlarmManager.RTC_WAKEUP,
             time,
-            pendingIntent
+            pendingIntent,
         )
 
         addPrefReminder(idTask, time)
@@ -106,9 +114,10 @@ class AlarmUtil @Inject constructor(
         idTask: Int,
         deadlineTime: Long,
     ) {
-        val intent = Intent(context, AlarmServiceReceiver::class.java).apply {
-            putExtra(TaskType.COLUMN_ID, idTask)
-        }
+        val intent =
+            Intent(context, AlarmServiceReceiver::class.java).apply {
+                putExtra(TaskType.COLUMN_ID, idTask)
+            }
 
         val alarmManager = context.getSystemService(AlarmManager::class.java)
 
@@ -122,17 +131,19 @@ class AlarmUtil @Inject constructor(
                     intent.apply {
                         putExtra(NOTIFICATION_CODE, NotificationType.REMINDER_FOR_DEADLINE.name)
                     },
-                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-                )
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+                ),
             )
         } else {
             alarmManager?.setExact(
-                AlarmManager.RTC_WAKEUP, deadlineTime, PendingIntent.getBroadcast(
+                AlarmManager.RTC_WAKEUP,
+                deadlineTime,
+                PendingIntent.getBroadcast(
                     context,
                     getUniqueRequestCode(AlarmType.DEADLINE, idTask),
                     intent.putExtra(NOTIFICATION_CODE, NotificationType.DEADLINE.name),
-                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-                )
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+                ),
             )
         }
 
@@ -142,17 +153,18 @@ class AlarmUtil @Inject constructor(
 
     fun cancelReminder(
         context: Context,
-        idTask: Int
+        idTask: Int,
     ) {
         val alarmManager = context.getSystemService(AlarmManager::class.java)
-        val pendingIntent = Intent(context, AlarmServiceReceiver::class.java).let {
-            PendingIntent.getBroadcast(
-                context,
-                getUniqueRequestCode(AlarmType.REMINDER, idTask),
-                it,
-                PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE
-            )
-        }
+        val pendingIntent =
+            Intent(context, AlarmServiceReceiver::class.java).let {
+                PendingIntent.getBroadcast(
+                    context,
+                    getUniqueRequestCode(AlarmType.REMINDER, idTask),
+                    it,
+                    PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE,
+                )
+            }
         if (pendingIntent != null && alarmManager != null) {
             alarmManager.cancel(pendingIntent)
             pendingIntent.cancel()
@@ -167,8 +179,8 @@ class AlarmUtil @Inject constructor(
                         taskDao.update(
                             task.copy(
                                 time = GLOBAL_START_DATE,
-                                repeatMode = RepeatMode.Once
-                            )
+                                repeatMode = RepeatMode.Once,
+                            ),
                         )
                         checkAlarmFileCounts(context)
                     } catch (e: Exception) {
@@ -180,17 +192,18 @@ class AlarmUtil @Inject constructor(
 
     fun cancelDeadline(
         context: Context,
-        idTask: Int
+        idTask: Int,
     ) {
         val alarmManager = context.getSystemService(AlarmManager::class.java)
-        val pendingIntent = Intent(context, AlarmServiceReceiver::class.java).let {
-            PendingIntent.getBroadcast(
-                context,
-                getUniqueRequestCode(AlarmType.DEADLINE, idTask),
-                it,
-                PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE
-            )
-        }
+        val pendingIntent =
+            Intent(context, AlarmServiceReceiver::class.java).let {
+                PendingIntent.getBroadcast(
+                    context,
+                    getUniqueRequestCode(AlarmType.DEADLINE, idTask),
+                    it,
+                    PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE,
+                )
+            }
         if (pendingIntent != null && alarmManager != null) {
             alarmManager.cancel(pendingIntent)
             pendingIntent.cancel()
@@ -211,21 +224,23 @@ class AlarmUtil @Inject constructor(
         }
     }
 
-
-    private fun addPrefReminder(id: Int, time: Long) =
-        applicationScope.launch {
+    private fun addPrefReminder(
+        id: Int,
+        time: Long,
+    ) = applicationScope.launch {
             withContext(ioDispatcher) {
                 alarmPreferencesDataStore.addReminderPref(id, time)
             }
         }
 
-    private fun addPrefDeadline(id: Int, time: Long) =
-        applicationScope.launch {
+    private fun addPrefDeadline(
+        id: Int,
+        time: Long,
+    ) = applicationScope.launch {
             withContext(ioDispatcher) {
                 alarmPreferencesDataStore.addDeadlinePref(id, time)
             }
         }
-
 
     fun removePrefReminder(id: Int) =
         applicationScope.launch {
@@ -241,7 +256,6 @@ class AlarmUtil @Inject constructor(
             }
         }
 
-
     private suspend fun checkAlarmFileCounts(context: Context) {
         val alarmPreferencesSize = alarmPreferencesDataStore.preferencesFlow.first().asMap().size
         if (alarmPreferencesSize <= 1) {
@@ -251,7 +265,10 @@ class AlarmUtil @Inject constructor(
         }
     }
 
-    fun cancelAllAlarmsType(context: Context, alarmType: AlarmType) {
+    fun cancelAllAlarmsType(
+        context: Context,
+        alarmType: AlarmType,
+    ) {
         applicationScope.launch {
             withContext(ioDispatcher) {
                 val alarmFile =
@@ -265,14 +282,16 @@ class AlarmUtil @Inject constructor(
                             cancelDeadline(context, (alarmId.key.name).toInt())
                         }
                     }
+
                     AlarmType.REMINDER -> {
-                        //All reminders cancel
+                        // All reminders cancel
                         for (alarmId in alarmFile) {
                             cancelReminder(context, (alarmId.key.name).toInt())
                         }
                     }
+
                     AlarmType.DEADLINE -> {
-                        //All deadlines cancel
+                        // All deadlines cancel
                         for (alarmId in alarmFile) {
                             cancelDeadline(context, (alarmId.key.name).toInt())
                         }
@@ -283,7 +302,6 @@ class AlarmUtil @Inject constructor(
         }
         disableBroadcastReceiver(context)
     }
-
 
     fun onBootAlarms(context: Context) {
         applicationScope.launch {
@@ -296,7 +314,6 @@ class AlarmUtil @Inject constructor(
                     remove(booleanPreferencesKey(ALARM_IS_NOT_EMPTY))
                 } as MutableMap<Preferences.Key<String>, String>
             for ((id) in alarmFile) {
-
                 val reminderTime = getTimeFromString(alarmFile[id], AlarmType.REMINDER)
                 val deadlineTime = getTimeFromString(alarmFile[id], AlarmType.DEADLINE)
                 if (reminderTime != GLOBAL_START_DATE.toString() && reminderTime.isNotBlank()) {
@@ -304,27 +321,26 @@ class AlarmUtil @Inject constructor(
                         context,
                         id.name.toInt(),
                         RepeatMode.Once,
-                        reminderTime.toLong()
+                        reminderTime.toLong(),
                     )
                 }
                 if (deadlineTime != GLOBAL_START_DATE.toString() && deadlineTime.isNotBlank()) {
                     setDeadline(
                         context,
                         id.name.toInt(),
-                        deadlineTime.toLong()
+                        deadlineTime.toLong(),
                     )
                 }
             }
         }
     }
 
-
     private fun enableBroadcastReceiver(context: Context) {
         val receiver = ComponentName(context, AlarmServiceReceiver::class.java)
         context.packageManager.setComponentEnabledSetting(
             receiver,
             PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
-            PackageManager.DONT_KILL_APP
+            PackageManager.DONT_KILL_APP,
         )
     }
 
@@ -333,7 +349,7 @@ class AlarmUtil @Inject constructor(
         context.packageManager.setComponentEnabledSetting(
             receiver,
             PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
-            PackageManager.DONT_KILL_APP
+            PackageManager.DONT_KILL_APP,
         )
     }
 }

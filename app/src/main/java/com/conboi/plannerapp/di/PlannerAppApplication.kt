@@ -11,14 +11,14 @@ import dagger.hilt.android.HiltAndroidApp
 
 @HiltAndroidApp
 class PlannerAppApplication : Application(), ImageLoaderFactory {
-
     override fun onCreate() {
         super.onCreate()
-        val qonversionConfig = QonversionConfig.Builder(
-            this,
-            BuildConfig.QonversionKEY,
-            QLaunchMode.SubscriptionManagement
-        ).build()
+        val qonversionConfig =
+            QonversionConfig.Builder(
+                this,
+                BuildConfig.QonversionKEY,
+                QLaunchMode.SubscriptionManagement,
+            ).build()
         Qonversion.initialize(qonversionConfig)
     }
 
